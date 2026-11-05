@@ -111,7 +111,9 @@ async function toggleSound(){
  }else if(audio.state==='running')await audio.suspend();else await audio.resume();
  const on=audio.state==='running';$('#sound').setAttribute('aria-pressed',String(on));$('#sound').textContent=on?'♪ 켜짐':'♪ 소리';toast(on?'차창과 레일의 소리가 들려요.':'소리를 껐어요.');
 }
-$('#sound').onclick=toggleSound;
+let audioChanging=false;
+function updateSoundButton(on){$('#sound').setAttribute('aria-pressed',String(on));$('#sound').setAttribute('aria-label',on?'환경음 끄기':'환경음 켜기');$('#sound').textContent=on?'♪ 켜짐':'♪ 소리';}
+$('#sound').onclick=async()=>{if(audioChanging)return;audioChanging=true;$('#sound').disabled=true;try{await toggleSound();updateSoundButton(audio?.state==='running');}catch{try{await audio?.close();}catch{}audio=null;master=null;railGain=null;airGain=null;updateSoundButton(false);toast('지금은 소리를 켤 수 없어요. 소리 없이도 쉬어갈 수 있어요.');}finally{audioChanging=false;$('#sound').disabled=false;}};
 const modal=$('#modal'),content=$('#modal-content');let focusBeforeModal,modalIsolation=[];
 function openModal(title,html){if(modal.hidden){focusBeforeModal=document.activeElement;modalIsolation=[...$('#app').children].filter(el=>el!==modal).map(el=>[el,el.inert]);}$('#modal-title').textContent=title;content.innerHTML=html;for(const [el] of modalIsolation)el.inert=true;modal.hidden=false;modal.querySelector('.close').focus();}
 function closeModal(){if(modal.hidden)return;modal.hidden=true;for(const [el,wasInert] of modalIsolation)el.inert=wasInert;modalIsolation=[];if(focusBeforeModal?.isConnected&&!focusBeforeModal.disabled)focusBeforeModal.focus();}
