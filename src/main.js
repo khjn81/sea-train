@@ -107,13 +107,13 @@ async function toggleSound(){
  const on=audio.state==='running';$('#sound').setAttribute('aria-pressed',String(on));$('#sound').textContent=on?'♪ 켜짐':'♪ 소리';toast(on?'차창과 레일의 소리가 들려요.':'소리를 껐어요.');
 }
 $('#sound').onclick=toggleSound;
-const modal=$('#modal'),content=$('#modal-content');let focusBeforeModal;
-function openModal(title,html){focusBeforeModal=document.activeElement;$('#modal-title').textContent=title;content.innerHTML=html;modal.hidden=false;modal.querySelector('.close').focus();}
-function closeModal(){modal.hidden=true;focusBeforeModal?.focus();}
+const modal=$('#modal'),content=$('#modal-content');let focusBeforeModal,modalIsolation=[];
+function openModal(title,html){if(modal.hidden){focusBeforeModal=document.activeElement;modalIsolation=[...$('#app').children].filter(el=>el!==modal).map(el=>[el,el.inert]);}$('#modal-title').textContent=title;content.innerHTML=html;for(const [el] of modalIsolation)el.inert=true;modal.hidden=false;modal.querySelector('.close').focus();}
+function closeModal(){if(modal.hidden)return;modal.hidden=true;for(const [el,wasInert] of modalIsolation)el.inert=wasInert;modalIsolation=[];if(focusBeforeModal?.isConnected&&!focusBeforeModal.disabled)focusBeforeModal.focus();}
 modal.querySelector('.close').onclick=closeModal;modal.onclick=e=>{if(e.target===modal)closeModal();};
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){if(!modal.hidden)closeModal();else closeActions(true);}
- if(e.key==='Tab'&&!modal.hidden){const buttons=[...modal.querySelectorAll('button,input,a')].filter(e=>!e.disabled);const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+ if(e.key==='Tab'&&!modal.hidden){const buttons=[...modal.querySelectorAll('button,input,a[href],select,textarea,[tabindex]')].filter(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length);const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
 });
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 $('#people').onclick=()=>openModal('함께 있는 승객',`<p>실제 접속 ${connected?users.length:1}명 · 데모 동승 ${demoChars.length}명</p>${users.length?users.map(u=>`<div class="passenger"><i>♙</i>${escape(u.name)}<small>${u.id===me?'나':u.mode==='seated'?actionNames[u.action]:'천천히 걷는 중'}</small></div>`).join(''):`<div class="passenger"><i>♙</i>여행하는 구름<small>나 · 오프라인</small></div>`}${names.map((name,i)=>`<div class="passenger"><i>♙</i>${name}<small>데모 · ${['차 마시기','독서','휴식'][i%3]}</small></div>`).join('')}<p>승객을 누르면 이름을 볼 수 있어요.</p>`);
