@@ -9,6 +9,8 @@ import { readPreference, writePreference, readVolumePercent } from './preference
 import { showGraphicsFailure } from './graphics.js';
 
 function startTrain(){
+const lifetime=new AbortController();let graphicsLost=false,frameHandle=0,guideTimer;
+function listen(target,type,callback){target.addEventListener(type,callback,{signal:lifetime.signal});}
 const icons={wave:'♧',seat:'▤',window:'◌',tea:'♨',stand:'♙'};
 const names=['느린 파도','다정한 달빛','작은 노을','고요한 조약돌','포근한 구름','느긋한 바람','따뜻한 별빛','은은한 물결','조용한 소라','맑은 새벽'];
 const $=s=>document.querySelector(s),v=(x,y,z)=>new THREE.Vector3(x,y,z);
@@ -25,7 +27,7 @@ let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true});}catch{showG
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.4,-3);controls.enablePan=false;controls.enableDamping=true;controls.minDistance=1.8;controls.maxDistance=20;controls.minPolarAngle=.43;controls.maxPolarAngle=1.47;controls.update();
 scene.add(new THREE.HemisphereLight('#ffe8c8','#a29885',2.6));
 const sun=new THREE.DirectionalLight('#ffbb8c',2.1);sun.position.set(-6,7,-5);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-10,right:10,top:14,bottom:-14,near:.5,far:35});sun.shadow.bias=-.001;scene.add(sun);
-const panorama=buildAtmosphere(scene,()=>{probe.update(renderer,scene);});const oceanTick=buildOcean(scene,panorama);const {seats,targets}=buildCarriage(scene);
+const panorama=buildAtmosphere(scene,()=>{if(!graphicsLost)probe.update(renderer,scene);});const oceanTick=buildOcean(scene,panorama);const {seats,targets}=buildCarriage(scene);
 for(const z of [-5,4]){const lamp=new THREE.PointLight('#ffe3b2',9,12,2);lamp.position.set(0,3.9,z);scene.add(lamp);}
 const reflection=new THREE.WebGLCubeRenderTarget(64,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});const probe=new THREE.CubeCamera(.1,140,reflection);probe.position.set(0,2.2,0);probe.update(renderer,scene);scene.environment=reflection.texture;
 const floorHit=new THREE.Mesh(new THREE.BoxGeometry(1.9,.03,18),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));floorHit.position.y=.12;scene.add(floorHit);
@@ -36,7 +38,7 @@ const remote=new Map();let users=[],me=null,socket,connected=false,reconnectTime
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');
 let motionOverride=readPreference('sea:reduced');
 let seat=null,request=0,waiter=null,route=[],afterWalk=null,walking=false,action='idle',lookMode=false,cameraGoal=null,savedView=null,desiredAction='idle',reduced=motionOverride===null?motionQuery.matches:motionOverride==='true';
-motionQuery.addEventListener('change',event=>{if(motionOverride===null){reduced=event.matches;const checkbox=$('#reduce');if(checkbox)checkbox.checked=reduced;}});
+listen(motionQuery,'change',event=>{if(motionOverride===null){reduced=event.matches;const checkbox=$('#reduce');if(checkbox)checkbox.checked=reduced;}});
 let journeyEpoch=0;
 const actionNames={idle:'가만히 쉬는 중',tea:'따뜻한 차를 마시는 중',read:'책을 읽는 중',stretch:'기지개를 켜는 중'};
 function send(message){if(connected&&socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(message));}
@@ -59,6 +61,7 @@ function sync(){
  }ui();
 }
 function connect(){
+ if(graphicsLost)return;
  clearTimeout(reconnectTimer);if(navigator.onLine===false){networkPhase='offline';ui();return;}if(socket&&[WebSocket.CONNECTING,WebSocket.OPEN].includes(socket.readyState))return;networkPhase='connecting';ui();
  const endpoint=import.meta.env.VITE_REALTIME_URL||`${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/realtime`;const connection=socket=new WebSocket(endpoint);
  socket.onopen=()=>{if(socket!==connection)return;connected=true;networkPhase='online';ui();};
@@ -71,8 +74,8 @@ function connect(){
  }catch{}};
  socket.onclose=()=>{if(socket!==connection)return;connected=false;networkPhase='offline';users=[];if(waiter){clearTimeout(waiter.timer);const cb=waiter.resolve;waiter=null;cb(null);}sync();clearTimeout(reconnectTimer);reconnectTimer=setTimeout(connect,4000);};socket.onerror=()=>connection.close();
 }
-window.addEventListener('offline',()=>{connected=false;networkPhase='offline';users=[];socket?.close();sync();});
-window.addEventListener('online',()=>{clearTimeout(reconnectTimer);connect();});
+listen(window,'offline',()=>{connected=false;networkPhase='offline';users=[];socket?.close();sync();});
+listen(window,'online',()=>{clearTimeout(reconnectTimer);connect();});
 function reserve(id){if(!connected)return Promise.resolve(id);return new Promise(resolve=>{const seq=++request;waiter={id:seq,resolve,timer:setTimeout(()=>{if(waiter?.id===seq){waiter=null;send({type:'leave'});resolve(null);ui();}},4000)};send({type:'seat',seat:id,requestId:seq});ui();});}
 function setAction(next,network=true){action=next;act(player,next);if(network)send({type:'action',action:next});ui();}
 function beginRoute(points,done){route=points.filter(p=>p.distanceTo(player.position)>.05);afterWalk=done;walking=route.length>0;pose(player,false);setAction('idle',false);lookMode=false;ui();if(!walking){const fn=afterWalk;afterWalk=null;fn?.();}}
@@ -89,8 +92,8 @@ function nearestSeat(){return seats.map((s,i)=>({i,d:Math.hypot(s.x-player.posit
 function stand(){journeyEpoch++;if(waiter){clearTimeout(waiter.timer);const cancel=waiter.resolve;waiter=null;cancel(null);}const exit=leavePath();route=[];afterWalk=null;walking=false;seat=null;lookMode=false;desiredAction='idle';pose(player,false);setAction('idle',false);send({type:'leave'});beginRoute(exit,()=>{send({type:'stop'});ui();});aim(v(0,3.1,Math.min(9.5,player.position.z+4)),v(0,1.4,player.position.z-4));ui();}
 function walkTo(p){const exit=leavePath();seat=null;send({type:'leave'});beginRoute([...exit,p],()=>{send({type:'stop'});ui();});}
 const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let downAt;
-renderer.domElement.addEventListener('pointerdown',e=>downAt=[e.clientX,e.clientY]);
-renderer.domElement.addEventListener('pointerup',e=>{
+listen(renderer.domElement,'pointerdown',e=>downAt=[e.clientX,e.clientY]);
+listen(renderer.domElement,'pointerup',e=>{
  if(!downAt||Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>8||walking||waiter)return;
  mouse.set(e.clientX/innerWidth*2-1,-e.clientY/innerHeight*2+1);ray.setFromCamera(mouse,camera);
  const charHit=ray.intersectObjects([player,...demoChars,...remote.values()],true)[0];if(charHit){let p=charHit.object;while(p&&!p.userData.name)p=p.parent;if(p){p.userData.tag.visible=true;p.userData.showName=performance.now();toast(p.userData.name);}return;}
@@ -101,7 +104,7 @@ $('#sit').onclick=()=>{desiredAction='idle';const id=nearestSeat();if(id!==undef
 $('#greet').onclick=()=>{player.userData.wave=performance.now();send({type:'greet'});toast('동승객에게 조용히 손을 흔들었어요.');};
 $('#relax').onclick=()=>{const panel=$('#action-panel');panel.hidden=!panel.hidden;$('#relax').setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)panel.querySelector('button')?.focus();};
 $('#action-panel').onclick=e=>{const button=e.target.closest('[data-action]');if(!button)return;const next=button.dataset.action;closeActions();desiredAction=next;if(walking){toast('자리에 도착하면 시작할게요.');return;}if(seat!==null)setAction(next);else{const id=nearestSeat();if(id!==undefined)sit(id);else toast('앉을 자리가 없어요.');}};
-document.addEventListener('pointerdown',event=>{if(!event.target.closest('#action-panel,#relax'))closeActions();});
+listen(document,'pointerdown',event=>{if(!event.target.closest('#action-panel,#relax'))closeActions();});
 $('#look').onclick=()=>{if(walking)return;lookMode=!lookMode;if(lookMode){savedView={position:camera.position.clone(),target:controls.target.clone()};const s=seat!==null?seats[seat]:{side:player.position.x>0?1:-1,z:player.position.z};const pane=-10+(Math.floor((s.z+10)/2.8)+.5)*2.8;aim(v(s.side*2.65,2.05,Math.min(9,pane+.1)),v(s.side*10,1.85,pane-.1));}else if(savedView)aim(savedView.position,savedView.target);ui();};
 // Quiet rail sound: filtered air and a soft, repeating wheel rhythm share scene time.
 let audio,master,railGain,airGain,volume=readVolumePercent()/100;
@@ -120,7 +123,7 @@ const modal=$('#modal'),content=$('#modal-content');let focusBeforeModal,modalIs
 function openModal(title,html){if(modal.hidden){focusBeforeModal=document.activeElement;modalIsolation=[...$('#app').children].filter(el=>el!==modal).map(el=>[el,el.inert]);}$('#modal-title').textContent=title;content.innerHTML=html;for(const [el] of modalIsolation)el.inert=true;modal.hidden=false;modal.querySelector('.close').focus();}
 function closeModal(){if(modal.hidden)return;modal.hidden=true;for(const [el,wasInert] of modalIsolation)el.inert=wasInert;modalIsolation=[];if(focusBeforeModal?.isConnected&&!focusBeforeModal.disabled)focusBeforeModal.focus();}
 modal.querySelector('.close').onclick=closeModal;modal.onclick=e=>{if(e.target===modal)closeModal();};
-document.addEventListener('keydown',e=>{
+listen(document,'keydown',e=>{
  if(e.key==='Escape'){if(!modal.hidden){closeModal();return;}if(!$('#action-panel').hidden){closeActions(true);return;}if(walking||seat!==null||waiter){e.preventDefault();stand();}return;}
  if(e.target===renderer.domElement&&modal.hidden){const step={ArrowUp:[0,-.8],ArrowDown:[0,.8],ArrowLeft:[-.6,0],ArrowRight:[.6,0]}[e.key];if(step){e.preventDefault();if(!walking&&!waiter)walkTo(v(THREE.MathUtils.clamp(player.position.x+step[0],-.65,.65),0,THREE.MathUtils.clamp(player.position.z+step[1],-8.8,8.8)));}else if(e.key==='Enter'){e.preventDefault();$('#sit').click();}}
  if(e.key==='Tab'&&!modal.hidden){const buttons=[...modal.querySelectorAll('button,input,a[href],select,textarea,[tabindex]')].filter(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length);const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
@@ -137,9 +140,10 @@ $('#capture').onclick=()=>{
  renderer.render(scene,camera);const postcard=document.createElement('canvas');postcard.width=renderer.domElement.width;postcard.height=renderer.domElement.height;const ctx=postcard.getContext('2d');ctx.drawImage(renderer.domElement,0,0);const size=postcard.width/60;ctx.fillStyle='rgba(30,26,24,.55)';ctx.fillRect(0,postcard.height-size*3,postcard.width,size*3);ctx.fillStyle='#fff2db';ctx.font=`${size}px serif`;ctx.fillText('바다행 · 말없이 함께 쉬어가는 기차',size,postcard.height-size);const url=postcard.toDataURL('image/png');postcardUrl=url;
  openModal('오늘의 차창',`<img class="postcard" alt="방금 기차에서 담은 장면" src="${url}"><a class="download" href="${url}" download="바다행-차창.png">이미지 저장</a><p>지금 이 순간을 한 장에 담았어요.</p>`);
 };
-window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+listen(window,'resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 let lastMove=0;const clock=new THREE.Clock();
 function frame(){
+ if(graphicsLost)return;
  const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;oceanTick(time);
  const railPhase=(time*1.3)%1;
  if(audio?.state==='running')railGain.gain.setTargetAtTime(.012+.045*Math.exp(-railPhase*24)+.022*Math.exp(-Math.pow((railPhase-.18)*28,2)),audio.currentTime,.02);
@@ -158,9 +162,10 @@ function frame(){
  if(cameraGoal){camera.position.lerp(cameraGoal.position,1-Math.exp(-dt*7));controls.target.lerp(cameraGoal.target,1-Math.exp(-dt*7));if(camera.position.distanceTo(cameraGoal.position)<.015){cameraGoal=null;controls.enabled=true;controls.enableDamping=true;}}
  controls.update();camera.position.x=THREE.MathUtils.clamp(camera.position.x,-3.7,3.7);camera.position.y=THREE.MathUtils.clamp(camera.position.y,1.3,4.25);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-9.8,10.2);
  camera.setViewOffset(innerWidth,innerHeight,reduced?0:Math.sin(time*2.6)*.65,reduced?0:Math.sin(time*5.2)*.22,innerWidth,innerHeight);
- renderer.render(scene,camera);requestAnimationFrame(frame);
+ renderer.render(scene,camera);frameHandle=requestAnimationFrame(frame);
 }
-connect();frame();setTimeout(()=>$('.guide').classList.add('faded'),8000);ui();
+listen(renderer.domElement,'webglcontextlost',event=>{event.preventDefault();if(graphicsLost)return;graphicsLost=true;journeyEpoch++;lifetime.abort();cancelAnimationFrame(frameHandle);clearTimeout(reconnectTimer);clearTimeout(guideTimer);clearTimeout(toastTimer);if(waiter){clearTimeout(waiter.timer);const cancel=waiter.resolve;waiter=null;cancel(null);}if(socket){socket.onopen=socket.onmessage=socket.onclose=socket.onerror=null;socket.close();}if(audio)void audio.close().catch(()=>{});controls.dispose();renderer.dispose();showGraphicsFailure('lost');});
+connect();frame();guideTimer=setTimeout(()=>$('.guide')?.classList.add('faded'),8000);ui();
 
 }
 startTrain();
