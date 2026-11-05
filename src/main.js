@@ -89,10 +89,12 @@ renderer.domElement.addEventListener('pointerup',e=>{
  const charHit=ray.intersectObjects([player,...demoChars,...remote.values()],true)[0];if(charHit){let p=charHit.object;while(p&&!p.userData.name)p=p.parent;if(p){p.userData.tag.visible=true;p.userData.showName=performance.now();toast(p.userData.name);}return;}
  const hit=ray.intersectObjects([...targets,floorHit])[0];if(!hit)return;if(hit.object===floorHit)walkTo(v(THREE.MathUtils.clamp(hit.point.x,-.65,.65),0,THREE.MathUtils.clamp(hit.point.z,-8.8,8.8)));else{desiredAction='idle';sit(hit.object.userData.seat);}
 });
+function closeActions(restoreFocus=false){const panel=$('#action-panel');const wasOpen=!panel.hidden;panel.hidden=true;$('#relax').setAttribute('aria-expanded','false');if(restoreFocus&&wasOpen)$('#relax').focus();}
 $('#sit').onclick=()=>{desiredAction='idle';const id=nearestSeat();if(id!==undefined)sit(id);else toast('지금은 빈자리가 없어요.');};$('#stand').onclick=stand;
 $('#greet').onclick=()=>{player.userData.wave=performance.now();send({type:'greet'});toast('동승객에게 조용히 손을 흔들었어요.');};
-$('#relax').onclick=()=>{const panel=$('#action-panel');panel.hidden=!panel.hidden;$('#relax').setAttribute('aria-expanded',String(!panel.hidden));};
-$('#action-panel').onclick=e=>{const button=e.target.closest('[data-action]');if(!button)return;const next=button.dataset.action;$('#action-panel').hidden=true;$('#relax').setAttribute('aria-expanded','false');desiredAction=next;if(walking){toast('자리에 도착하면 시작할게요.');return;}if(seat!==null)setAction(next);else{const id=nearestSeat();if(id!==undefined)sit(id);else toast('앉을 자리가 없어요.');}};
+$('#relax').onclick=()=>{const panel=$('#action-panel');panel.hidden=!panel.hidden;$('#relax').setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)panel.querySelector('button')?.focus();};
+$('#action-panel').onclick=e=>{const button=e.target.closest('[data-action]');if(!button)return;const next=button.dataset.action;closeActions();desiredAction=next;if(walking){toast('자리에 도착하면 시작할게요.');return;}if(seat!==null)setAction(next);else{const id=nearestSeat();if(id!==undefined)sit(id);else toast('앉을 자리가 없어요.');}};
+document.addEventListener('pointerdown',event=>{if(!event.target.closest('#action-panel,#relax'))closeActions();});
 $('#look').onclick=()=>{if(walking)return;lookMode=!lookMode;if(lookMode){savedView={position:camera.position.clone(),target:controls.target.clone()};const s=seat!==null?seats[seat]:{side:player.position.x>0?1:-1,z:player.position.z};const pane=-10+(Math.floor((s.z+10)/2.8)+.5)*2.8;aim(v(s.side*2.65,2.05,Math.min(9,pane+.1)),v(s.side*10,1.85,pane-.1));}else if(savedView)aim(savedView.position,savedView.target);ui();};
 // Quiet rail sound: filtered air and a soft, repeating wheel rhythm share scene time.
 let audio,master,railGain,airGain,volume=readVolumePercent()/100;
@@ -110,7 +112,7 @@ function openModal(title,html){focusBeforeModal=document.activeElement;$('#modal
 function closeModal(){modal.hidden=true;focusBeforeModal?.focus();}
 modal.querySelector('.close').onclick=closeModal;modal.onclick=e=>{if(e.target===modal)closeModal();};
 document.addEventListener('keydown',e=>{
- if(e.key==='Escape'){closeModal();$('#action-panel').hidden=true;}
+ if(e.key==='Escape'){if(!modal.hidden)closeModal();else closeActions(true);}
  if(e.key==='Tab'&&!modal.hidden){const buttons=[...modal.querySelectorAll('button,input,a')].filter(e=>!e.disabled);const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
 });
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
