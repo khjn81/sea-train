@@ -5,6 +5,7 @@ import { buildCarriage } from './carriage.js';
 import { buildOcean } from './ocean.js';
 import { buildAtmosphere } from './atmosphere.js';
 import { passenger, pose, act, updatePassenger, identity, nameTag } from './passenger.js';
+import { readPreference, writePreference } from './preferences.js';
 
 const icons={wave:'♧',seat:'▤',window:'◌',tea:'♨',stand:'♙'};
 const names=['느린 파도','다정한 달빛','작은 노을','고요한 조약돌','포근한 구름','느긋한 바람','따뜻한 별빛','은은한 물결','조용한 소라','맑은 새벽'];
@@ -30,7 +31,7 @@ const demos=[1,4,7,10,13,16,19,20,22,3];
 const demoChars=demos.map((id,i)=>{const c=passenger(scene,i);c.position.set(seats[id].x,0,seats[id].z);pose(c,true);act(c,['tea','read','idle'][i%3]);nameTag(c,names[i]+' · 데모');return c;});
 const player=passenger(scene,4);player.position.set(0,0,4.8);player.rotation.y=Math.PI;nameTag(player,'나');
 const remote=new Map();let users=[],me=null,socket,connected=false,reconnectTimer;
-let seat=null,request=0,waiter=null,route=[],afterWalk=null,walking=false,action='idle',lookMode=false,cameraGoal=null,savedView=null,desiredAction='idle',reduced=localStorage.getItem('sea:reduced')===null?matchMedia('(prefers-reduced-motion: reduce)').matches:localStorage.getItem('sea:reduced')==='true';
+let seat=null,request=0,waiter=null,route=[],afterWalk=null,walking=false,action='idle',lookMode=false,cameraGoal=null,savedView=null,desiredAction='idle',reduced=readPreference('sea:reduced')===null?matchMedia('(prefers-reduced-motion: reduce)').matches:readPreference('sea:reduced')==='true';
 const actionNames={idle:'가만히 쉬는 중',tea:'따뜻한 차를 마시는 중',read:'책을 읽는 중',stretch:'기지개를 켜는 중'};
 function send(message){if(connected&&socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(message));}
 function aim(position,target){controls.enableDamping=false;controls.update();controls.enabled=false;cameraGoal={position,target};}
@@ -91,7 +92,7 @@ $('#relax').onclick=()=>{const panel=$('#action-panel');panel.hidden=!panel.hidd
 $('#action-panel').onclick=e=>{const button=e.target.closest('[data-action]');if(!button)return;const next=button.dataset.action;$('#action-panel').hidden=true;$('#relax').setAttribute('aria-expanded','false');desiredAction=next;if(walking){toast('자리에 도착하면 시작할게요.');return;}if(seat!==null)setAction(next);else{const id=nearestSeat();if(id!==undefined)sit(id);else toast('앉을 자리가 없어요.');}};
 $('#look').onclick=()=>{if(walking)return;lookMode=!lookMode;if(lookMode){savedView={position:camera.position.clone(),target:controls.target.clone()};const s=seat!==null?seats[seat]:{side:player.position.x>0?1:-1,z:player.position.z};const pane=-10+(Math.floor((s.z+10)/2.8)+.5)*2.8;aim(v(s.side*2.65,2.05,Math.min(9,pane+.1)),v(s.side*10,1.85,pane-.1));}else if(savedView)aim(savedView.position,savedView.target);ui();};
 // Quiet rail sound: filtered air and a soft, repeating wheel rhythm share scene time.
-let audio,master,railGain,airGain,volume=Number(localStorage.getItem('sea:volume')||45)/100;
+let audio,master,railGain,airGain,volume=Number(readPreference('sea:volume')||45)/100;
 async function toggleSound(){
  if(!audio){audio=new AudioContext();master=audio.createGain();master.gain.value=volume;master.connect(audio.destination);
   const b=audio.createBuffer(1,audio.sampleRate*3,audio.sampleRate),data=b.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
@@ -113,8 +114,8 @@ const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 $('#people').onclick=()=>openModal('함께 있는 승객',`<p>실제 접속 ${connected?users.length:1}명 · 데모 동승 ${demoChars.length}명</p>${users.length?users.map(u=>`<div class="passenger"><i>♙</i>${escape(u.name)}<small>${u.id===me?'나':u.mode==='seated'?actionNames[u.action]:'천천히 걷는 중'}</small></div>`).join(''):`<div class="passenger"><i>♙</i>여행하는 구름<small>나 · 오프라인</small></div>`}${names.map((name,i)=>`<div class="passenger"><i>♙</i>${name}<small>데모 · ${['차 마시기','독서','휴식'][i%3]}</small></div>`).join('')}<p>승객을 누르면 이름을 볼 수 있어요.</p>`);
 $('#settings').onclick=()=>{
  openModal('편하게 쉬어가기',`<div class="setting"><label for="volume">기차 소리 크기</label><input type="range" id="volume" min="0" max="100" value="${Math.round(volume*100)}"><output id="volume-value">${Math.round(volume*100)}%</output></div><div class="setting"><label class="checkline"><input type="checkbox" id="reduce" ${reduced?'checked':''}> 움직임 줄이기</label><p>객실의 작은 흔들림과 소품 효과를 줄여요.</p></div><p>바닥을 눌러 걷고, 빈 좌석을 눌러 앉아요. 쉬어가기에서 차·책·기지개를 선택할 수 있어요.</p><p>데모 승객은 실제 접속 인원에 포함되지 않아요.</p>`);
- $('#volume').oninput=e=>{volume=Number(e.target.value)/100;$('#volume-value').textContent=`${e.target.value}%`;localStorage.setItem('sea:volume',String(e.target.value));if(master)master.gain.setTargetAtTime(volume,audio.currentTime,.1);};
- $('#reduce').onchange=e=>{reduced=e.target.checked;localStorage.setItem('sea:reduced',String(reduced));};
+ $('#volume').oninput=e=>{volume=Number(e.target.value)/100;$('#volume-value').textContent=`${e.target.value}%`;writePreference('sea:volume',String(e.target.value));if(master)master.gain.setTargetAtTime(volume,audio.currentTime,.1);};
+ $('#reduce').onchange=e=>{reduced=e.target.checked;writePreference('sea:reduced',String(reduced));};
 };
 let postcardUrl;
 $('#capture').onclick=()=>{
