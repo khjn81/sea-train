@@ -12,7 +12,7 @@ const names=['느린 파도','다정한 달빛','작은 노을','고요한 조�
 const $=s=>document.querySelector(s),v=(x,y,z)=>new THREE.Vector3(x,y,z);
 $('#app').innerHTML=`<div id="scene" role="img" aria-label="노을 바다를 달리는 기차의 객실"></div><div class="vignette"></div>
 <header class="top"><div class="brand"><span class="brand-icon">▥</span><strong>바다행</strong><small>노을 열차 · 1호차</small></div><div class="toolbar"><button id="people" aria-label="함께 있는 승객 보기">♙ <span id="count">1</span></button><button id="sound" aria-pressed="false" aria-label="환경음 켜기">♪ 소리</button><button id="capture" aria-label="지금 장면 담기">▧</button><button id="settings" aria-label="설정">☷</button></div></header>
-<div class="demo-badge">데모 동승 10명</div><div class="guide">바닥을 눌러 걸어요 · 드래그로 둘러보기</div>
+<div id="connection-state" class="connection-state" role="status" aria-live="polite"></div><div class="demo-badge">데모 동승 10명</div><div class="guide">바닥을 눌러 걸어요 · 드래그로 둘러보기</div>
 <div class="title-card"><strong>바다 위를 천천히 달리는 중</strong><small>말없이 함께, 잠시 쉬어가요.</small></div><div id="journey-state" role="status"></div><div class="toast" role="status"></div>
 <section id="action-panel" class="action-panel" hidden aria-label="쉬어가는 방법"><header>어떻게 쉬어갈까요?<small>빈자리에 앉아서 천천히</small></header><div class="action-choices"><button data-action="tea"><span>♨</span>차 마시기</button><button data-action="read"><span>▥</span>책 읽기</button><button data-action="stretch"><span>↟</span>기지개</button><button data-action="idle"><span>◌</span>가만히 쉬기</button></div></section>
 <nav class="dock" aria-label="기차에서 할 일"><button id="greet"><span>${icons.wave}</span>손 인사</button><button id="sit"><span>${icons.seat}</span>자리 앉기</button><button id="relax" aria-expanded="false"><span>${icons.tea}</span>쉬어가기</button><button id="look" aria-pressed="false"><span>${icons.window}</span>창밖 보기</button><button id="stand" disabled><span>${icons.stand}</span>일어나기</button></nav>
@@ -30,7 +30,7 @@ const floorHit=new THREE.Mesh(new THREE.BoxGeometry(1.9,.03,18),new THREE.MeshBa
 const demos=[1,4,7,10,13,16,19,20,22,3];
 const demoChars=demos.map((id,i)=>{const c=passenger(scene,i);c.position.set(seats[id].x,0,seats[id].z);pose(c,true);act(c,['tea','read','idle'][i%3]);nameTag(c,names[i]+' · 데모');return c;});
 const player=passenger(scene,4);player.position.set(0,0,4.8);player.rotation.y=Math.PI;nameTag(player,'나');
-const remote=new Map();let users=[],me=null,socket,connected=false,reconnectTimer;
+const remote=new Map();let users=[],me=null,socket,connected=false,reconnectTimer,networkPhase='connecting';
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');
 let motionOverride=readPreference('sea:reduced');
 let seat=null,request=0,waiter=null,route=[],afterWalk=null,walking=false,action='idle',lookMode=false,cameraGoal=null,savedView=null,desiredAction='idle',reduced=motionOverride===null?motionQuery.matches:motionOverride==='true';
@@ -41,6 +41,7 @@ function send(message){if(connected&&socket?.readyState===WebSocket.OPEN)socket.
 function aim(position,target){controls.enableDamping=false;controls.update();controls.enabled=false;cameraGoal={position,target};}
 let toastTimer;function toast(text){$('.toast').textContent=text;$('.toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('.toast').classList.remove('show'),2800);}
 function ui(){
+ $('#connection-state').textContent=connected?'함께 쉬는 중':networkPhase==='connecting'?'동승객을 찾는 중':'혼자 둘러보는 중';
  $('#count').textContent=connected?users.length:'1';$('#people').title=connected?`실제 접속 ${users.length}명`:'연결 끊김 · 혼자 둘러보는 중';
  $('#sit').disabled=walking||!!waiter||seat!==null;$('#stand').disabled=seat===null&&!walking;$('#look').disabled=walking;$('#sit').setAttribute('aria-pressed',String(seat!==null&&!walking));$('#look').setAttribute('aria-pressed',String(lookMode));
  $('#journey-state').textContent=walking?'자리로 천천히 걷는 중 · 일어나기로 멈출 수 있어요':seat!==null?actionNames[action]:'';
@@ -56,17 +57,20 @@ function sync(){
  }ui();
 }
 function connect(){
- const endpoint=import.meta.env.VITE_REALTIME_URL||`${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/realtime`;socket=new WebSocket(endpoint);
- socket.onopen=()=>{connected=true;ui();};
- socket.onmessage=e=>{try{const d=JSON.parse(e.data);
+ clearTimeout(reconnectTimer);if(navigator.onLine===false){networkPhase='offline';ui();return;}if(socket&&[WebSocket.CONNECTING,WebSocket.OPEN].includes(socket.readyState))return;networkPhase='connecting';ui();
+ const endpoint=import.meta.env.VITE_REALTIME_URL||`${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/realtime`;const connection=socket=new WebSocket(endpoint);
+ socket.onopen=()=>{if(socket!==connection)return;connected=true;networkPhase='online';ui();};
+ socket.onmessage=e=>{if(socket!==connection)return;try{const d=JSON.parse(e.data);
   if(d.type==='welcome'){me=d.id;identity(player,me);if(seat!==null||walking){route=[];afterWalk=null;walking=false;seat=null;pose(player,false);setAction('idle',false);toast('다시 연결됐어요. 자리를 다시 골라주세요.');}}
   if(d.type==='state'){users=d.users;sync();}
   if(d.type==='seat-granted'&&waiter?.id===d.requestId){const callback=waiter.resolve;clearTimeout(waiter.timer);waiter=null;callback(d.seat);}
   if(d.type==='seat-rejected'&&waiter?.id===d.requestId){const callback=waiter.resolve;clearTimeout(waiter.timer);waiter=null;callback(null);}
   if(d.type==='greet'&&d.id!==me){const c=remote.get(d.id);if(c){c.userData.wave=performance.now();c.userData.tag.visible=true;c.userData.showName=performance.now();}toast(`${d.name} 님이 손을 흔들었어요`);}
  }catch{}};
- socket.onclose=()=>{connected=false;users=[];if(waiter){clearTimeout(waiter.timer);const cb=waiter.resolve;waiter=null;cb(null);}sync();clearTimeout(reconnectTimer);reconnectTimer=setTimeout(connect,4000);};socket.onerror=()=>socket.close();
+ socket.onclose=()=>{if(socket!==connection)return;connected=false;networkPhase='offline';users=[];if(waiter){clearTimeout(waiter.timer);const cb=waiter.resolve;waiter=null;cb(null);}sync();clearTimeout(reconnectTimer);reconnectTimer=setTimeout(connect,4000);};socket.onerror=()=>connection.close();
 }
+window.addEventListener('offline',()=>{connected=false;networkPhase='offline';users=[];socket?.close();sync();});
+window.addEventListener('online',()=>{clearTimeout(reconnectTimer);connect();});
 function reserve(id){if(!connected)return Promise.resolve(id);return new Promise(resolve=>{const seq=++request;waiter={id:seq,resolve,timer:setTimeout(()=>{if(waiter?.id===seq){waiter=null;send({type:'leave'});resolve(null);ui();}},4000)};send({type:'seat',seat:id,requestId:seq});ui();});}
 function setAction(next,network=true){action=next;act(player,next);if(network)send({type:'action',action:next});ui();}
 function beginRoute(points,done){route=points.filter(p=>p.distanceTo(player.position)>.05);afterWalk=done;walking=route.length>0;pose(player,false);setAction('idle',false);lookMode=false;ui();if(!walking){const fn=afterWalk;afterWalk=null;fn?.();}}
