@@ -31,7 +31,10 @@ const demos=[1,4,7,10,13,16,19,20,22,3];
 const demoChars=demos.map((id,i)=>{const c=passenger(scene,i);c.position.set(seats[id].x,0,seats[id].z);pose(c,true);act(c,['tea','read','idle'][i%3]);nameTag(c,names[i]+' · 데모');return c;});
 const player=passenger(scene,4);player.position.set(0,0,4.8);player.rotation.y=Math.PI;nameTag(player,'나');
 const remote=new Map();let users=[],me=null,socket,connected=false,reconnectTimer;
-let seat=null,request=0,waiter=null,route=[],afterWalk=null,walking=false,action='idle',lookMode=false,cameraGoal=null,savedView=null,desiredAction='idle',reduced=readPreference('sea:reduced')===null?matchMedia('(prefers-reduced-motion: reduce)').matches:readPreference('sea:reduced')==='true';
+const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');
+let motionOverride=readPreference('sea:reduced');
+let seat=null,request=0,waiter=null,route=[],afterWalk=null,walking=false,action='idle',lookMode=false,cameraGoal=null,savedView=null,desiredAction='idle',reduced=motionOverride===null?motionQuery.matches:motionOverride==='true';
+motionQuery.addEventListener('change',event=>{if(motionOverride===null){reduced=event.matches;const checkbox=$('#reduce');if(checkbox)checkbox.checked=reduced;}});
 const actionNames={idle:'가만히 쉬는 중',tea:'따뜻한 차를 마시는 중',read:'책을 읽는 중',stretch:'기지개를 켜는 중'};
 function send(message){if(connected&&socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(message));}
 function aim(position,target){controls.enableDamping=false;controls.update();controls.enabled=false;cameraGoal={position,target};}
@@ -115,7 +118,7 @@ $('#people').onclick=()=>openModal('함께 있는 승객',`<p>실제 접속 ${co
 $('#settings').onclick=()=>{
  openModal('편하게 쉬어가기',`<div class="setting"><label for="volume">기차 소리 크기</label><input type="range" id="volume" min="0" max="100" value="${Math.round(volume*100)}"><output id="volume-value">${Math.round(volume*100)}%</output></div><div class="setting"><label class="checkline"><input type="checkbox" id="reduce" ${reduced?'checked':''}> 움직임 줄이기</label><p>객실의 작은 흔들림과 소품 효과를 줄여요.</p></div><p>바닥을 눌러 걷고, 빈 좌석을 눌러 앉아요. 쉬어가기에서 차·책·기지개를 선택할 수 있어요.</p><p>데모 승객은 실제 접속 인원에 포함되지 않아요.</p>`);
  $('#volume').oninput=e=>{volume=Number(e.target.value)/100;$('#volume-value').textContent=`${e.target.value}%`;writePreference('sea:volume',String(e.target.value));if(master)master.gain.setTargetAtTime(volume,audio.currentTime,.1);};
- $('#reduce').onchange=e=>{reduced=e.target.checked;writePreference('sea:reduced',String(reduced));};
+ $('#reduce').onchange=e=>{reduced=e.target.checked;motionOverride=String(reduced);writePreference('sea:reduced',motionOverride);};
 };
 let postcardUrl;
 $('#capture').onclick=()=>{
