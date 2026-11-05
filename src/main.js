@@ -6,7 +6,9 @@ import { buildOcean } from './ocean.js';
 import { buildAtmosphere } from './atmosphere.js';
 import { passenger, pose, act, updatePassenger, identity, nameTag } from './passenger.js';
 import { readPreference, writePreference, readVolumePercent } from './preferences.js';
+import { showGraphicsFailure } from './graphics.js';
 
+function startTrain(){
 const icons={wave:'♧',seat:'▤',window:'◌',tea:'♨',stand:'♙'};
 const names=['느린 파도','다정한 달빛','작은 노을','고요한 조약돌','포근한 구름','느긋한 바람','따뜻한 별빛','은은한 물결','조용한 소라','맑은 새벽'];
 const $=s=>document.querySelector(s),v=(x,y,z)=>new THREE.Vector3(x,y,z);
@@ -19,7 +21,7 @@ $('#app').innerHTML=`<div id="scene" role="img" aria-label="노을 바다를 달
 <div class="modal-backdrop" id="modal" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header><h2 id="modal-title"></h2><button class="close" aria-label="닫기">×</button></header><div id="modal-content"></div></section></div>`;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#e7a184');
 const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,360);camera.position.set(0,3.3,8.8);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;$('#scene').appendChild(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','기차 둘러보기. 방향키로 걷고 Enter로 앉으며 Escape로 멈춰요.');
+let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true});}catch{showGraphicsFailure();return;}renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;$('#scene').appendChild(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','기차 둘러보기. 방향키로 걷고 Enter로 앉으며 Escape로 멈춰요.');
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.4,-3);controls.enablePan=false;controls.enableDamping=true;controls.minDistance=1.8;controls.maxDistance=20;controls.minPolarAngle=.43;controls.maxPolarAngle=1.47;controls.update();
 scene.add(new THREE.HemisphereLight('#ffe8c8','#a29885',2.6));
 const sun=new THREE.DirectionalLight('#ffbb8c',2.1);sun.position.set(-6,7,-5);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-10,right:10,top:14,bottom:-14,near:.5,far:35});sun.shadow.bias=-.001;scene.add(sun);
@@ -159,3 +161,6 @@ function frame(){
  renderer.render(scene,camera);requestAnimationFrame(frame);
 }
 connect();frame();setTimeout(()=>$('.guide').classList.add('faded'),8000);ui();
+
+}
+startTrain();
