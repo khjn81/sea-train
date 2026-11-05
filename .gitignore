@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.DS_Store
+
+# Third-party public bundle snapshots for local analysis only
+research/soom-halloween/source/
+
+# Local research and generated verification artifacts
+.improvement-runs/
+research/
+concepts/
+public/ocean.png
+test-results/
+playwright-report/
+.env*
+!.env.example
