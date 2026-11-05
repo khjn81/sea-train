@@ -2,7 +2,17 @@ import * as THREE from 'three';
 
 // One panoramic environment shared by the sky and water reflection.
 export function buildAtmosphere(scene,onReady=()=>{}){
- const texture=new THREE.TextureLoader().load('/landscape-panorama.jpg',onReady);
+ // A tiny original gradient is usable immediately, including offline/failed images.
+ const fallback=document.createElement('canvas');fallback.width=256;fallback.height=128;
+ const context=fallback.getContext('2d');
+ const gradient=context.createLinearGradient(0,0,0,128);
+ gradient.addColorStop(0,'#8f92ae');gradient.addColorStop(.48,'#e5b69a');
+ gradient.addColorStop(.60,'#f1c49e');gradient.addColorStop(1,'#a1a2af');
+ context.fillStyle=gradient;context.fillRect(0,0,256,128);
+ const texture=new THREE.CanvasTexture(fallback);
+ new THREE.ImageLoader().load('/landscape-panorama.jpg',image=>{
+  texture.image=image;texture.needsUpdate=true;onReady();
+ },undefined,()=>onReady());
  texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=THREE.ClampToEdgeWrapping;
  const sky=new THREE.Mesh(new THREE.SphereGeometry(150,48,24),new THREE.ShaderMaterial({
   uniforms:{panorama:{value:texture}},side:THREE.BackSide,depthWrite:false,

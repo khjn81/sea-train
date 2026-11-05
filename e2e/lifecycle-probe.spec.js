@@ -15,3 +15,17 @@ test('context-loss fallback remains safe after delayed timers and connectivity c
   await expect(page.getByRole('alert')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('a missing panorama preserves an interactive train with a readable fallback sky', async ({ page }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/landscape-panorama.jpg', route => route.abort('failed'));
+  await page.goto('/');
+  await expect(page.locator('#scene canvas')).toBeVisible();
+  await expect(page.locator('#people')).toHaveAttribute('title', /실제 접속/);
+  await page.locator('#settings').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.screenshot({ path: testInfo.outputPath('asset-fallback.png') });
+  expect(errors).toEqual([]);
+});
