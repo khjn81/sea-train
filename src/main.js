@@ -19,7 +19,7 @@ $('#app').innerHTML=`<div id="scene" role="img" aria-label="노을 바다를 달
 <div class="modal-backdrop" id="modal" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header><h2 id="modal-title"></h2><button class="close" aria-label="닫기">×</button></header><div id="modal-content"></div></section></div>`;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#e7a184');
 const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,360);camera.position.set(0,3.3,8.8);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;$('#scene').appendChild(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;$('#scene').appendChild(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','기차 둘러보기. 방향키로 걷고 Enter로 앉으며 Escape로 멈춰요.');
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.4,-3);controls.enablePan=false;controls.enableDamping=true;controls.minDistance=1.8;controls.maxDistance=20;controls.minPolarAngle=.43;controls.maxPolarAngle=1.47;controls.update();
 scene.add(new THREE.HemisphereLight('#ffe8c8','#a29885',2.6));
 const sun=new THREE.DirectionalLight('#ffbb8c',2.1);sun.position.set(-6,7,-5);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-10,right:10,top:14,bottom:-14,near:.5,far:35});sun.shadow.bias=-.001;scene.add(sun);
@@ -35,6 +35,7 @@ const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');
 let motionOverride=readPreference('sea:reduced');
 let seat=null,request=0,waiter=null,route=[],afterWalk=null,walking=false,action='idle',lookMode=false,cameraGoal=null,savedView=null,desiredAction='idle',reduced=motionOverride===null?motionQuery.matches:motionOverride==='true';
 motionQuery.addEventListener('change',event=>{if(motionOverride===null){reduced=event.matches;const checkbox=$('#reduce');if(checkbox)checkbox.checked=reduced;}});
+let journeyEpoch=0;
 const actionNames={idle:'가만히 쉬는 중',tea:'따뜻한 차를 마시는 중',read:'책을 읽는 중',stretch:'기지개를 켜는 중'};
 function send(message){if(connected&&socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(message));}
 function aim(position,target){controls.enableDamping=false;controls.update();controls.enabled=false;cameraGoal={position,target};}
@@ -72,14 +73,14 @@ function beginRoute(points,done){route=points.filter(p=>p.distanceTo(player.posi
 function leavePath(){if(seat===null||!player.userData.sitting)return Math.abs(player.position.x)>.8?[v(0,0,player.position.z)]:[];const s=seats[seat];return [v(s.x,0,s.z+.85),v(0,0,s.z+.85)];}
 async function sit(id){
  if(walking||waiter)return;if(demos.includes(id)||users.some(u=>u.id!==me&&u.seat===id)){toast('이미 누군가 앉아 있어요.');return;}
- const exit=leavePath();if(seat!==null){send({type:'leave'});seat=null;}
- const granted=await reserve(id);if(granted===null){toast('자리가 먼저 찼어요. 다른 자리를 골라주세요.');return;}
+ const epoch=++journeyEpoch;const exit=leavePath();if(seat!==null){send({type:'leave'});seat=null;}
+ const granted=await reserve(id);if(epoch!==journeyEpoch)return;if(granted===null){toast('자리가 먼저 찼어요. 다른 자리를 골라주세요.');return;}
  seat=id;const s=seats[id];beginRoute([...exit,v(0,0,s.z+.85),v(s.x,0,s.z+.85),v(s.x,0,s.z)],()=>{
   player.rotation.y=0;pose(player,true);send({type:'settle'});setAction(desiredAction);aim(v(s.x*.48,2.65,Math.min(9.5,s.z+3.7)),v(s.x,1.05,s.z+.25));toast('여기서 천천히 쉬어가세요.');ui();
  });
 }
 function nearestSeat(){return seats.map((s,i)=>({i,d:Math.hypot(s.x-player.position.x,s.z-player.position.z)})).filter(s=>!demos.includes(s.i)&&!users.some(u=>u.id!==me&&u.seat===s.i)).sort((a,b)=>a.d-b.d)[0]?.i;}
-function stand(){const exit=leavePath();route=[];afterWalk=null;walking=false;seat=null;lookMode=false;desiredAction='idle';pose(player,false);setAction('idle',false);send({type:'leave'});beginRoute(exit,()=>{send({type:'stop'});ui();});aim(v(0,3.1,Math.min(9.5,player.position.z+4)),v(0,1.4,player.position.z-4));ui();}
+function stand(){journeyEpoch++;if(waiter){clearTimeout(waiter.timer);const cancel=waiter.resolve;waiter=null;cancel(null);}const exit=leavePath();route=[];afterWalk=null;walking=false;seat=null;lookMode=false;desiredAction='idle';pose(player,false);setAction('idle',false);send({type:'leave'});beginRoute(exit,()=>{send({type:'stop'});ui();});aim(v(0,3.1,Math.min(9.5,player.position.z+4)),v(0,1.4,player.position.z-4));ui();}
 function walkTo(p){const exit=leavePath();seat=null;send({type:'leave'});beginRoute([...exit,p],()=>{send({type:'stop'});ui();});}
 const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let downAt;
 renderer.domElement.addEventListener('pointerdown',e=>downAt=[e.clientX,e.clientY]);
@@ -112,7 +113,8 @@ function openModal(title,html){if(modal.hidden){focusBeforeModal=document.active
 function closeModal(){if(modal.hidden)return;modal.hidden=true;for(const [el,wasInert] of modalIsolation)el.inert=wasInert;modalIsolation=[];if(focusBeforeModal?.isConnected&&!focusBeforeModal.disabled)focusBeforeModal.focus();}
 modal.querySelector('.close').onclick=closeModal;modal.onclick=e=>{if(e.target===modal)closeModal();};
 document.addEventListener('keydown',e=>{
- if(e.key==='Escape'){if(!modal.hidden)closeModal();else closeActions(true);}
+ if(e.key==='Escape'){if(!modal.hidden){closeModal();return;}if(!$('#action-panel').hidden){closeActions(true);return;}if(walking||seat!==null||waiter){e.preventDefault();stand();}return;}
+ if(e.target===renderer.domElement&&modal.hidden){const step={ArrowUp:[0,-.8],ArrowDown:[0,.8],ArrowLeft:[-.6,0],ArrowRight:[.6,0]}[e.key];if(step){e.preventDefault();if(!walking&&!waiter)walkTo(v(THREE.MathUtils.clamp(player.position.x+step[0],-.65,.65),0,THREE.MathUtils.clamp(player.position.z+step[1],-8.8,8.8)));}else if(e.key==='Enter'){e.preventDefault();$('#sit').click();}}
  if(e.key==='Tab'&&!modal.hidden){const buttons=[...modal.querySelectorAll('button,input,a[href],select,textarea,[tabindex]')].filter(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length);const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
 });
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
