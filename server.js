@@ -2,8 +2,9 @@ import { WebSocketServer } from 'ws';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { serveApp } from './server/http.mjs';
+import { allowsOrigin } from './server/origin.mjs';
 const server=createServer((req,res)=>{void serveApp(req,res,{clientCount:clients.size});});
-const wss=new WebSocketServer({server,path:'/realtime',maxPayload:1024}), clients=new Map();
+const wss=new WebSocketServer({server,path:'/realtime',maxPayload:1024,verifyClient:info=>allowsOrigin(info.origin,info.req.headers.host)}), clients=new Map();
 const demos=new Set([1,4,7,10,13,16,19,20,22,3]),actions=new Set(['idle','tea','read','stretch']);
 let serial=0;
 function send(ws,value){if(ws.readyState===1)ws.send(JSON.stringify(value));}
