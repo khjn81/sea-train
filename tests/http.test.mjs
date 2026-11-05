@@ -1,0 +1,37 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+test('production serves only built assets, supports cache/HEAD and keeps health separate', async t => {
+  const folder = await mkdtemp(path.join(tmpdir(), 'sea-train-http-'));
+  t.after(() => rm(folder, { recursive: true, force: true }));
+  await mkdir(path.join(folder, 'assets'));
+  await writeFile(path.join(folder, 'index.html'), '<title>Sea Train</title>');
+  await writeFile(path.join(folder, 'assets/app-test.js'), 'console.log("train");');
+  const child = spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: '0', STATIC_DIR: folder }, stdio: ['ignore', 'pipe', 'pipe'] });
+  t.after(() => child.kill());
+  const [stdout] = await once(child.stdout, 'data');
+  const origin = `http://127.0.0.1:${Number(String(stdout).trim().split(' ').at(-1))}`;
+  let response = await fetch(origin);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type'), /text\/html/);
+  assert.match(await response.text(), /Sea Train/);
+  response = await fetch(origin + '/assets/app-test.js');
+  assert.match(response.headers.get('content-type'), /javascript/);
+  assert.match(response.headers.get('cache-control'), /immutable/);
+  const etag = response.headers.get('etag');
+  assert.equal((await fetch(origin + '/assets/app-test.js', { headers: { 'If-None-Match': etag } })).status, 304);
+  response = await fetch(origin, { method: 'HEAD' });
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), '');
+  assert.deepEqual(await (await fetch(origin + '/healthz')).json(), { status: 'ok', clients: 0 });
+  assert.equal((await fetch(origin + '/missing.js')).status, 404);
+  assert.equal((await fetch(origin + '/src/main.js')).status, 404);
+  assert.equal((await fetch(origin, { method: 'POST' })).status, 405);
+  assert.equal((await fetch(origin + '/%E0%A4%A')).status, 400);
+  assert.ok([400, 403, 404].includes((await fetch(origin + '/%2e%2e%2fpackage.json')).status));
+});

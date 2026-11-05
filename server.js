@@ -1,7 +1,8 @@
 import { WebSocketServer } from 'ws';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
-const server=createServer((req,res)=>{res.writeHead(200);res.end('sea train realtime');});
+import { serveApp } from './server/http.mjs';
+const server=createServer((req,res)=>{void serveApp(req,res,{clientCount:clients.size});});
 const wss=new WebSocketServer({server,path:'/realtime',maxPayload:1024}), clients=new Map();
 const demos=new Set([1,4,7,10,13,16,19,20,22,3]),actions=new Set(['idle','tea','read','stretch']);
 let serial=0;
@@ -23,4 +24,4 @@ wss.on('connection',ws=>{
  }catch{}});
  ws.on('close',()=>{clients.delete(ws);broadcast();});ws.on('error',()=>{});
 });
-server.listen(process.env.PORT||3001,()=>console.log('Realtime server listening '+server.address().port));
+server.listen(process.env.PORT||3001,process.env.HOST||'127.0.0.1',()=>console.log('Sea Train listening '+server.address().port));
