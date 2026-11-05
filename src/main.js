@@ -5,7 +5,7 @@ import { buildCarriage } from './carriage.js';
 import { buildOcean } from './ocean.js';
 import { buildAtmosphere } from './atmosphere.js';
 import { passenger, pose, act, updatePassenger, identity, nameTag } from './passenger.js';
-import { readPreference, writePreference } from './preferences.js';
+import { readPreference, writePreference, readVolumePercent } from './preferences.js';
 
 const icons={wave:'♧',seat:'▤',window:'◌',tea:'♨',stand:'♙'};
 const names=['느린 파도','다정한 달빛','작은 노을','고요한 조약돌','포근한 구름','느긋한 바람','따뜻한 별빛','은은한 물결','조용한 소라','맑은 새벽'];
@@ -92,7 +92,7 @@ $('#relax').onclick=()=>{const panel=$('#action-panel');panel.hidden=!panel.hidd
 $('#action-panel').onclick=e=>{const button=e.target.closest('[data-action]');if(!button)return;const next=button.dataset.action;$('#action-panel').hidden=true;$('#relax').setAttribute('aria-expanded','false');desiredAction=next;if(walking){toast('자리에 도착하면 시작할게요.');return;}if(seat!==null)setAction(next);else{const id=nearestSeat();if(id!==undefined)sit(id);else toast('앉을 자리가 없어요.');}};
 $('#look').onclick=()=>{if(walking)return;lookMode=!lookMode;if(lookMode){savedView={position:camera.position.clone(),target:controls.target.clone()};const s=seat!==null?seats[seat]:{side:player.position.x>0?1:-1,z:player.position.z};const pane=-10+(Math.floor((s.z+10)/2.8)+.5)*2.8;aim(v(s.side*2.65,2.05,Math.min(9,pane+.1)),v(s.side*10,1.85,pane-.1));}else if(savedView)aim(savedView.position,savedView.target);ui();};
 // Quiet rail sound: filtered air and a soft, repeating wheel rhythm share scene time.
-let audio,master,railGain,airGain,volume=Number(readPreference('sea:volume')||45)/100;
+let audio,master,railGain,airGain,volume=readVolumePercent()/100;
 async function toggleSound(){
  if(!audio){audio=new AudioContext();master=audio.createGain();master.gain.value=volume;master.connect(audio.destination);
   const b=audio.createBuffer(1,audio.sampleRate*3,audio.sampleRate),data=b.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
