@@ -16,7 +16,7 @@ for (const [file, expected] of Object.entries(seal)) {
   if (hash(fs.readFileSync(file)) !== expected) throw new Error(`Frozen evaluator changed: ${file}`);
 }
 const files = [];
-for (const root of ['src', 'server.js', 'package.json', 'package-lock.json', 'vite.config.js']) {
+for (const root of ['src', 'scripts', 'tests', 'e2e', 'server.js', 'package.json', 'package-lock.json', 'vite.config.js', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', '.github']) {
   function visit(file) {
     if (!fs.existsSync(file)) return;
     if (fs.statSync(file).isDirectory()) for (const entry of fs.readdirSync(file).sort()) visit(path.join(file, entry));
