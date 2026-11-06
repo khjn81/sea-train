@@ -4,21 +4,22 @@ import * as THREE from "three";
 export function buildAtmosphere(scene, onReady = () => {}) {
   // A tiny original gradient is usable immediately, including offline/failed images.
   const fallback = document.createElement("canvas");
-  fallback.width = 256;
-  fallback.height = 128;
+  // Keep immutable GPU storage dimensions unchanged when the image arrives.
+  fallback.width = 1536;
+  fallback.height = 512;
   const context = fallback.getContext("2d");
-  const gradient = context.createLinearGradient(0, 0, 0, 128);
+  const gradient = context.createLinearGradient(0, 0, 0, fallback.height);
   gradient.addColorStop(0, "#8f92ae");
   gradient.addColorStop(0.48, "#e5b69a");
   gradient.addColorStop(0.6, "#f1c49e");
   gradient.addColorStop(1, "#a1a2af");
   context.fillStyle = gradient;
-  context.fillRect(0, 0, 256, 128);
+  context.fillRect(0, 0, fallback.width, fallback.height);
   const texture = new THREE.CanvasTexture(fallback);
   new THREE.ImageLoader().load(
     "/landscape-panorama.jpg",
     (image) => {
-      texture.image = image;
+      context.drawImage(image, 0, 0, fallback.width, fallback.height);
       texture.needsUpdate = true;
       onReady();
     },

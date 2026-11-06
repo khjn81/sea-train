@@ -87,3 +87,15 @@ test('departing real passengers release their allocated graphics buffers', async
     await expect.poll(() => page.evaluate(() => window.__deletedSceneBuffers)).toBeGreaterThan(before);
   } finally { await otherContext.close(); }
 });
+
+test('normal panorama loading has no graphics texture-upload errors', async ({ page }, testInfo) => {
+  const errors = [];
+  page.on('console', message => {
+    if (/GL_INVALID|INVALID_VALUE|texSubImage2D|immutable texture/i.test(message.text())) errors.push(message.text());
+  });
+  await page.goto('/');
+  await expect(page.locator('#scene canvas')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await page.screenshot({ path: testInfo.outputPath('normal-panorama.png') });
+  expect(errors).toEqual([]);
+});
