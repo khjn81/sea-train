@@ -46,6 +46,23 @@ export function passenger(scene,seed){
  scene.add(group);return group;
 }
 export function pose(c,seated){c.userData.sitting=seated;}
+
+// Each passenger owns its geometry/materials; repeated meshes share only within it.
+export function disposePassenger(character){
+ if(character.userData.disposed)return;
+ const geometries=new Set(),materials=new Set(),textures=new Set();
+ character.traverse(node=>{
+  if(node.geometry)geometries.add(node.geometry);
+  for(const material of Array.isArray(node.material)?node.material:[node.material]){
+   if(!material)continue;materials.add(material);
+   for(const value of Object.values(material))if(value?.isTexture)textures.add(value);
+  }
+ });
+ for(const texture of textures)texture.dispose();
+ for(const geometry of geometries)geometry.dispose();
+ for(const material of materials)material.dispose();
+ character.removeFromParent();character.clear();character.userData={disposed:true};
+}
 export function act(c,action){if(c.userData.action!==action){c.userData.action=action;c.userData.blend=0;}}
 export function updatePassenger(c,dt,time,{moving=0,reduceMotion=false}={}){
  const d=c.userData,blend=1-Math.exp(-dt*7);d.seated+=(Number(d.sitting)-d.seated)*blend;d.blend=Math.min(1,d.blend+dt*2.5);

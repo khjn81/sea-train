@@ -61,3 +61,29 @@ test('a hidden document pauses scene drawing and sound without automatic audio r
   await expect.poll(() => page.evaluate(() => window.__sceneDraws)).toBeGreaterThan(before);
   await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'false');
 });
+
+test('departing real passengers release their allocated graphics buffers', async ({ page, browser }) => {
+  await page.addInitScript(() => {
+    window.__deletedSceneBuffers = 0;
+    const original = WebGL2RenderingContext.prototype.deleteBuffer;
+    WebGL2RenderingContext.prototype.deleteBuffer = function(...args) {
+      window.__deletedSceneBuffers++;
+      return original.apply(this, args);
+    };
+  });
+  await page.goto('/');
+  await expect(page.locator('#scene canvas')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  const otherContext = await browser.newContext();
+  try {
+    const other = await otherContext.newPage();
+    await other.goto(page.url());
+    await expect(page.locator('#count')).toHaveText('2');
+    await page.bringToFront();
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const before = await page.evaluate(() => window.__deletedSceneBuffers);
+    await otherContext.close();
+    await expect(page.locator('#count')).toHaveText('1');
+    await expect.poll(() => page.evaluate(() => window.__deletedSceneBuffers)).toBeGreaterThan(before);
+  } finally { await otherContext.close(); }
+});

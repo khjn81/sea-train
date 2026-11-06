@@ -4,7 +4,7 @@ import './style.css';
 import { buildCarriage } from './carriage.js';
 import { buildOcean } from './ocean.js';
 import { buildAtmosphere } from './atmosphere.js';
-import { passenger, pose, act, updatePassenger, identity, nameTag } from './passenger.js';
+import { passenger, pose, act, updatePassenger, identity, nameTag, disposePassenger } from './passenger.js';
 import { readPreference, writePreference, readVolumePercent } from './preferences.js';
 import { showGraphicsFailure } from './graphics.js';
 
@@ -53,7 +53,7 @@ function ui(){
  for(const button of document.querySelectorAll('[data-action]'))button.setAttribute('aria-pressed',String(seat!==null&&button.dataset.action===action));
 }
 function sync(){
- const ids=new Set(users.filter(u=>u.id!==me).map(u=>u.id));for(const [id,c] of remote)if(!ids.has(id)){scene.remove(c);remote.delete(id);}
+ const ids=new Set(users.filter(u=>u.id!==me).map(u=>u.id));for(const [id,c] of remote)if(!ids.has(id)){disposePassenger(c);remote.delete(id);}
  for(const u of users){if(u.id===me)continue;let c=remote.get(u.id);const seated=u.mode==='seated'&&u.seat!==null;
   const target=seated?v(seats[u.seat].x,0,seats[u.seat].z):v(u.x,0,u.z);
   if(!c){c=passenger(scene,0);identity(c,u.id);nameTag(c,u.name);c.position.copy(target);remote.set(u.id,c);}
@@ -165,7 +165,7 @@ function frame(){
  camera.setViewOffset(innerWidth,innerHeight,reduced?0:Math.sin(time*2.6)*.65,reduced?0:Math.sin(time*5.2)*.22,innerWidth,innerHeight);
  renderer.render(scene,camera);frameHandle=requestAnimationFrame(frame);
 }
-listen(renderer.domElement,'webglcontextlost',event=>{event.preventDefault();if(graphicsLost)return;graphicsLost=true;journeyEpoch++;lifetime.abort();cancelAnimationFrame(frameHandle);clearTimeout(reconnectTimer);clearTimeout(guideTimer);clearTimeout(toastTimer);if(waiter){clearTimeout(waiter.timer);const cancel=waiter.resolve;waiter=null;cancel(null);}if(socket){socket.onopen=socket.onmessage=socket.onclose=socket.onerror=null;socket.close();}if(audio)void audio.close().catch(()=>{});controls.dispose();renderer.dispose();showGraphicsFailure('lost');});
+listen(renderer.domElement,'webglcontextlost',event=>{event.preventDefault();if(graphicsLost)return;graphicsLost=true;journeyEpoch++;lifetime.abort();cancelAnimationFrame(frameHandle);clearTimeout(reconnectTimer);clearTimeout(guideTimer);clearTimeout(toastTimer);if(waiter){clearTimeout(waiter.timer);const cancel=waiter.resolve;waiter=null;cancel(null);}if(socket){socket.onopen=socket.onmessage=socket.onclose=socket.onerror=null;socket.close();}if(audio)void audio.close().catch(()=>{});controls.dispose();for(const character of [player,...demoChars,...remote.values()])disposePassenger(character);remote.clear();renderer.dispose();showGraphicsFailure('lost');});
 connect();frame();guideTimer=setTimeout(()=>$('.guide')?.classList.add('faded'),8000);ui();
 
 }
