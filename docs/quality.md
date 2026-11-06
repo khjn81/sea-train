@@ -21,7 +21,7 @@ npm run verify
 npm run check:clean
 ```
 
-macOS with Google Chrome uses an isolated headless Chrome profile for Chromium tests. Linux CI uses Playwright Chromium. WebKit is a separately installed test engine. The 360px mobile suite and 390px touch-production suite are emulations, not physical-device claims. Camera/microphone input and personal browser profiles are not used.
+Historical development evaluations used isolated Google Chrome on macOS. Current public npm commands use pinned full Chromium on every platform. WebKit is a separately installed test engine. The 360px mobile suite and 390px touch-production suite are emulations, not physical-device claims. Camera/microphone input and personal browser profiles are not used.
 
 ## Experiment record
 
@@ -67,3 +67,5 @@ The repository contains application source, generated project imagery, tests, an
 ## CI instrumentation experiment
 
 The first Linux run completed installation, formatting, build, and unit checks, then timed out during browser checks. Its traces repeatedly reported GPU readback stalls. A separate CI run disables continuous trace capture while retaining the same browser cases, assertions, retry counts, timeouts, explicit application screenshots, and JSON reports. The outcome is reported separately; this does not change the scored local evaluator or add to the application-improvement count.
+
+The trace-only hypothesis did not resolve the failure. A local A/B reproduction with the same Playwright Chromium version reproduced the headless-shell timeout and passed the same journey using the full Chromium channel. Public npm commands therefore select `browser.config.js` and `release-browser.config.js`, which preserve the same tests, projects, assertions, timeouts and retry counts while using the full Chromium implementation. The original sealed evaluator files and historical Mac judgments remain unchanged. See [Playwright browser modes](https://playwright.dev/docs/browsers#chromium-new-headless-mode).

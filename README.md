@@ -61,7 +61,7 @@ npm run test:release
 npm run check:clean
 ```
 
-E2E는 테스트용 브라우저 프로필에서 실제 화면과 WebSocket을 사용합니다. macOS에 Google Chrome이 있으면 해당 실행 파일을 격리된 headless 프로필로 사용하고, 그 외에는 Playwright Chromium을 사용합니다. 모바일 항목은 브라우저 에뮬레이션입니다.
+E2E는 테스트용 브라우저 프로필에서 실제 화면과 WebSocket을 사용합니다. 공개 검증 명령은 Playwright에 고정된 전체 Chromium의 새 headless 모드를 사용합니다. WebKit은 별도 테스트 엔진입니다. 모바일 항목은 브라우저 에뮬레이션입니다.
 
 22회 개선 과정, 실패 사례와 검증 범위는 [품질 기록](docs/quality.md), 평가 기준은 [루브릭](quality/rubric.json)을 참고하세요.
 
