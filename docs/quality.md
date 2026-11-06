@@ -5,7 +5,7 @@
 - 23 distinct hypothesis/change/evaluation rounds were executed. Baseline and harness setup are not counted as improvements.
 - The fixed 100-point rubric moved from 37 to 75. These are implementation-agent judgments supported by execution evidence, not independent human or market ratings.
 - The original frozen desktop suite moved from 5/16 passing to 16/16. Six supplementary browser probes were added and compared against the relevant pre-change implementation.
-- Final local development checks: 21/21 desktop and 21/21 mobile-emulation (before round 23; final repeat pending) cases passed, without retries.
+- Final local development checks: 22/22 desktop and 22/22 mobile-emulation (round 23, before its final cadence correction) cases passed, without retries.
 - Final production checks: 6/6 passed across isolated Chrome, actual emulated touch input, and WebKit contexts.
 - A fresh temporary checkout installed from the lockfile, built, and passed unit/protocol/process checks. CI repeats the public checks in Linux.
 
@@ -52,7 +52,7 @@ The exact rubric is in [quality/rubric.json](../quality/rubric.json); hypotheses
 | 21 | Exclude engine-owned Sprite geometry from passenger-owned disposal; retain unique material and texture cleanup. | keep | 75/100 |
 | 22 | Allocate a bounded 3:1 canvas once and draw the loaded image into that same backing before updating the texture. | keep | 75/100 |
 
-| 23 | Bound software-renderer resolution, omit dynamic shadows and cube reflections, and limit drawing to 20 Hz. | keep locally; remote verification pending | 75/100 |
+| 23 | Bound software-renderer resolution, omit dynamic shadows and cube reflections, and limit drawing to 15 Hz. | keep locally; remote verification pending | 75/100 |
 
 ## Failures retained in the record
 
@@ -73,3 +73,5 @@ The first Linux run completed installation, formatting, build, and unit checks, 
 The trace-only hypothesis did not resolve the failure. A local A/B reproduction with the same Playwright Chromium version reproduced the headless-shell timeout and passed the same journey using the full Chromium channel. Public npm commands therefore select `browser.config.js` and `release-browser.config.js`, which preserve the same tests, projects, assertions, timeouts and retry counts while using the full Chromium implementation. The original sealed evaluator files and historical Mac judgments remain unchanged. See [Playwright browser modes](https://playwright.dev/docs/browsers#chromium-new-headless-mode).
 
 The third Linux run also timed out with full Chromium. Round 23 addresses the application cost on software renderers directly. Detection remains local; no renderer identity is transmitted or stored. Hardware-accelerated users retain the normal profile. A supplementary probe failed its backing-width bound before the change and passes afterward; all original assertions remain unchanged.
+
+The fourth Linux run improved to 10 passing cases but exposed slow walking under the reduced cadence and exhausted the shared suite budget. The same round was corrected to preserve elapsed walking time and reduce software pixels further. CI now runs the unchanged desktop, mobile, and production projects as separate jobs; case/action timeouts and zero retries remain unchanged. The original 180-second combined local evaluator remains sealed.

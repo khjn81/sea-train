@@ -854,7 +854,8 @@ function startTrain() {
       return;
     }
     lastFrame = now;
-    const dt = Math.min(clock.getDelta(), 0.05);
+    // A reduced drawing cadence must not slow walking to a fraction of real time.
+    const dt = Math.min(clock.getDelta(), profile.software ? 0.2 : 0.05);
     if (document.hidden) {
       frameHandle = requestAnimationFrame(frame);
       return;
