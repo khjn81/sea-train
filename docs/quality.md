@@ -5,9 +5,9 @@
 - 24 distinct hypothesis/change/evaluation rounds were executed. Baseline and harness setup are not counted as improvements.
 - The fixed 100-point rubric moved from 37 to 75. These are implementation-agent judgments supported by execution evidence, not independent human or market ratings.
 - The original frozen desktop suite moved from 5/16 passing to 16/16. Eight supplementary browser probes were added and compared against the relevant pre-change implementation.
-- Final local development checks: 22/22 desktop and 22/22 mobile-emulation (round 23, before its final cadence correction) cases passed, without retries.
+- Final local development checks: 24/24 desktop and 24/24 mobile-emulation cases passed, without retries.
 - Final production checks: 6/6 passed across isolated Chrome, actual emulated touch input, and WebKit contexts.
-- A fresh temporary checkout installed from the lockfile, built, and passed unit/protocol/process checks. CI repeats the public checks in Linux.
+- A fresh temporary checkout installed from the lockfile, built, and passed unit/protocol/process checks. All three final CI jobs passed in Linux.
 
 The final score deliberately remains below 100. Actual-phone thermal/performance tests, human usability studies, and multi-server production operation are outside this release.
 
@@ -52,9 +52,9 @@ The exact rubric is in [quality/rubric.json](../quality/rubric.json); hypotheses
 | 21 | Exclude engine-owned Sprite geometry from passenger-owned disposal; retain unique material and texture cleanup. | keep | 75/100 |
 | 22 | Allocate a bounded 3:1 canvas once and draw the loaded image into that same backing before updating the texture. | keep | 75/100 |
 
-| 23 | Bound software-renderer resolution, omit dynamic shadows and cube reflections, and limit drawing to 12 Hz. | keep locally; remote verification pending | 75/100 |
+| 23 | Bound software-renderer resolution, omit dynamic shadows and cube reflections, and limit drawing to 12 Hz. | keep; final CI passed | 75/100 |
 
-| 24 | Activate the lightweight profile after sustained slow visible frames, including restricted renderer identity. | keep locally; remote verification pending | 75/100 |
+| 24 | Activate the lightweight profile after sustained slow visible frames, including restricted renderer identity. | keep; final CI passed | 75/100 |
 
 ## Failures retained in the record
 
@@ -68,18 +68,12 @@ Supplementary probes explicitly inject storage denial, missing images, unavailab
 
 The repository contains application source, generated project imagery, tests, and this sanitized summary. Local reference-site snapshots, private research notes, raw traces and local-run state are excluded. Package and asset attribution is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
-## CI instrumentation experiment
+## CI verification and failed hypotheses
 
-The first Linux run completed installation, formatting, build, and unit checks, then timed out during browser checks. Its traces repeatedly reported GPU readback stalls. A separate CI run disables continuous trace capture while retaining the same browser cases, assertions, retry counts, timeouts, explicit application screenshots, and JSON reports. The outcome is reported separately; this does not change the scored local evaluator or add to the application-improvement count.
+[The final public CI run](https://github.com/khjn81/sea-train/actions/runs/42147519222) passed all three jobs: desktop 24/24, mobile 24/24, and production 6/6. Each job also passed the 9 unit/protocol/process checks. Tests run without retries. These are Linux browser-engine checks; mobile remains emulated.
 
-The trace-only hypothesis did not resolve the failure. A local A/B reproduction with the same Playwright Chromium version reproduced the headless-shell timeout and passed the same journey using the full Chromium channel. Public npm commands therefore select `browser.config.js` and `release-browser.config.js`, which preserve the same tests, projects, assertions, timeouts and retry counts while using the full Chromium implementation. The original sealed evaluator files and historical Mac judgments remain unchanged. See [Playwright browser modes](https://playwright.dev/docs/browsers#chromium-new-headless-mode).
+The initial Linux runs timed out under software rendering. Disabling continuous trace recording and selecting full Chromium did not resolve the application cost. Round23 added a bounded lightweight profile and preserved elapsed walking time at lower drawing rates. Round24 extended it to sustained slow frames even when renderer information is restricted. A counterexample above 1 second exposed and corrected an overly narrow first threshold. Both new slow-frame probes were run before and after the relevant change.
 
-The third Linux run also timed out with full Chromium. Round 23 addresses the application cost on software renderers directly. Detection remains local; no renderer identity is transmitted or stored. Responsive accelerated graphics retain the normal profile. A supplementary probe failed its backing-width bound before the change and passes afterward; all original assertions remain unchanged.
+Current public npm commands use pinned full Chromium; production also checks WebKit. CI runs the same project cases as separate jobs, retaining the 25-second development case limits, 35-second production case limits, original action/assertion timeouts, and zero retries. The original sealed combined local evaluator remains unchanged. Continuous CI trace recording is off; explicit screenshots, downloads, and JSON reports remain. See [Playwright browser modes](https://playwright.dev/docs/browsers#chromium-new-headless-mode).
 
-The fourth Linux run improved to 10 passing cases but exposed slow walking under the reduced cadence and exhausted the shared suite budget. The same round was corrected to preserve elapsed walking time and reduce software pixels further. CI now runs the unchanged desktop, mobile, and production projects as separate jobs; case/action timeouts and zero retries remain unchanged. The original 180-second combined local evaluator remains sealed.
-
-The fifth run passed all22 mobile and6 production checks; desktop passed21/22, with the two-person visit reaching the departure assertion at the25-second case limit. The final software profile further reduces backing pixels and drawing cadence (at most384px backing width,0.25 pixel ratio,12Hz). This deliberately trades software-renderer image detail for responsiveness; accelerated graphics retain the original profile. This is the third measured attempt within round23, not a new improvement count.
-
-The sixth run passed all44 development cases and5/6 production cases. WebKit reached the final standing assertion after the35-second case budget. Round24 therefore adds a measured slow-frame fallback instead of relying solely on renderer identity. The new restricted-identity/slow-cadence probe fails before the change and passes afterward. Normal responsive graphics retain the full profile.
-
-A second round24 counterexample exposed that intervals above1second were omitted by its first threshold. The corrected candidate observes three slow visible frames without excluding the slowest frames and resets observations on visibility changes. Both slow-frame probes and the selected original journey/lifecycle checks pass. CI installs only the browser engines used by each job.
+Lightweight rendering deliberately trades image detail for responsiveness: at most 384px backing width, 0.25 pixel ratio, no dynamic shadows/cube reflection, and at most 12 draws per second. Responsive graphics retain the original profile. Renderer identity stays local. No physical-device FPS, thermal, battery, or RAM/VRAM quantities are claimed.
