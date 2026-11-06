@@ -1,8 +1,12 @@
 # 바다행 · Sea Train
 
+[![Verify Sea Train](https://github.com/khjn81/sea-train/actions/workflows/ci.yml/badge.svg)](https://github.com/khjn81/sea-train/actions/workflows/ci.yml)
+
 바다 위를 달리는 기차에서 말없이 함께 쉬는 3D 웹 실험입니다. 차를 마시고, 책을 읽고, 창밖을 바라보며 다른 동승객에게 손을 흔들 수 있습니다.
 
 ![바다행 객실](docs/train-desktop.png)
+
+[모바일 화면 보기](docs/train-mobile.png) · 브라우저 에뮬레이션
 
 ## 바로 실행
 
@@ -51,14 +55,15 @@ npm start
 ```bash
 npm test
 npm run build
-npx playwright install chromium
+npx playwright install chromium webkit
 npm run test:e2e
+npm run test:release
 npm run check:clean
 ```
 
 E2E는 테스트용 브라우저 프로필에서 실제 화면과 WebSocket을 사용합니다. macOS에 Google Chrome이 있으면 해당 실행 파일을 격리된 headless 프로필로 사용하고, 그 외에는 Playwright Chromium을 사용합니다. 모바일 항목은 브라우저 에뮬레이션입니다.
 
-20회 개선 과정, 실패 사례와 검증 범위는 [품질 기록](docs/quality.md), 평가 기준은 [루브릭](quality/rubric.json)을 참고하세요.
+22회 개선 과정, 실패 사례와 검증 범위는 [품질 기록](docs/quality.md), 평가 기준은 [루브릭](quality/rubric.json)을 참고하세요.
 
 ## 구조
 

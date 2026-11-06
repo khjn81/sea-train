@@ -18,13 +18,16 @@ jobs:
       - run: npm run format:check
       - run: npm run build
       - run: npm test
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npx playwright test --reporter=list,json
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/e2e.json
+      - run: npm run test:release
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
           name: browser-evidence
-          path: test-results/
+          path: |
+            test-results/
+            test-results-release/
           retention-days: 7

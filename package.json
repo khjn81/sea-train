@@ -12,9 +12,10 @@
     "test:e2e": "playwright test",
     "start": "node server.js",
     "check:clean": "node scripts/clean-install.mjs",
-    "verify": "npm run build && npm test && npm run test:e2e",
+    "verify": "npm run build && npm test && npm run test:e2e && npm run test:release",
     "format": "prettier --write src server.js server scripts",
-    "format:check": "prettier --check src server.js server scripts"
+    "format:check": "prettier --check src server.js server scripts",
+    "test:release": "playwright test --config release.config.js"
   },
   "dependencies": {
     "three": "0.180.0",

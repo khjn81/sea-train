@@ -1,19 +1,28 @@
 {
-  "status": "final verification pending",
-  "method": "Fixed rubric v1; implementation-agent judgments with execution evidence; no independent human ratings.",
+  "status": "Development and final local verification complete; GitHub CI result is reported separately.",
+  "rubric": "rubric-v1",
+  "method": "Implementation-agent evidence-based judgments; not independent human ratings. Original 16-case browser suite is frozen; additional probes are explicitly supplementary.",
   "baseline": {
     "score": 37,
     "browserPassed": 5,
     "browserCases": 16
   },
+  "finalDevelopmentScore": 75,
+  "notes": [
+    "Round 11 quick-check acceptance was invalidated by a delayed timer probe; corrected in the same round.",
+    "Round 21 preserved shared Sprite geometry.",
+    "Round 22 repaired the normal panorama upload regression introduced by the fallback implementation."
+  ],
   "rounds": [
     {
       "round": 1,
       "hypothesis": "Removing remote font imports preserves the visit while eliminating required cross-origin requests.",
+      "observation": "The frozen baseline privacy acceptance test failed on Google Fonts requests.",
       "change": "Use the existing local/system fallback font stack, preserving train geometry and colors.",
       "decision": "keep",
       "score": 41,
       "assessment": "Privacy/offline dependency criterion improves only if the no-external-request browser test passes; visual quality is reviewed separately.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:40:18.562Z",
         "duration": 6662.879,
@@ -21,15 +30,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 2,
       "hypothesis": "Treating storage as optional allows private-mode and denied-storage visits to boot and complete a rest action.",
+      "observation": "The baseline denied-storage browser case crashed before the scene became usable.",
       "change": "Centralize guarded browser preference reads and writes without changing persistence when storage is available.",
       "decision": "keep",
       "score": 43,
       "assessment": "The browser storage API is deliberately denied; the full scene, settings toggle, and seating must still work.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:41:34.964Z",
         "duration": 9191.307,
@@ -37,15 +53,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 3,
       "hypothesis": "Parsing and bounding a persisted volume before use prevents NaN from leaking into UI and AudioParam values.",
+      "observation": "The baseline corrupt-volume browser case displayed an invalid output and a browser-coerced slider value.",
       "change": "Use a finite 0..100 parser with a documented 45 percent default.",
       "decision": "keep",
       "score": 44,
       "assessment": "Verify corrupt storage, persisted values, and denied storage under the same frozen browser cases.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:42:28.082Z",
         "duration": 5579.013,
@@ -53,15 +76,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 4,
       "hypothesis": "Listening for operating-system reduced-motion changes preserves comfort without overriding an explicit visitor choice.",
+      "observation": "The baseline only read matchMedia once; changing the OS preference after boot did not update the setting.",
       "change": "Track the media query live and retain an in-memory explicit override even when storage is denied.",
       "decision": "keep",
       "score": 46,
       "assessment": "Runtime media emulation changes must update the checkbox; explicit and storage-denied settings remain usable.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:44:03.998Z",
         "duration": 5732.652,
@@ -69,15 +99,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 5,
       "hypothesis": "A single action-menu close path keeps visual visibility, expanded semantics, and keyboard focus consistent.",
+      "observation": "Escape hid the menu but left aria-expanded true in the frozen baseline.",
       "change": "Centralize closing, focus the opened menu, restore focus on Escape, and close on outside input.",
       "decision": "keep",
       "score": 47,
       "assessment": "Check the visible menu, expanded state, restored trigger focus, and unaffected rest journey.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:46:36.706Z",
         "duration": 7690.4310000000005,
@@ -85,15 +122,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 6,
       "hypothesis": "Making modal siblings inert isolates keyboard and assistive navigation while preserving focus restoration.",
+      "observation": "The baseline focus loop existed, but background controls remained interactive and exposed during a dialog.",
       "change": "Save and restore sibling inert states, harden visible-focusable selection, and avoid stale restoration when no modal is open.",
       "decision": "keep",
       "score": 48,
       "assessment": "The frozen modal case checks backward focus wrapping, background inert state, and restoration; settings and download still work.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:47:21.656Z",
         "duration": 3505.464,
@@ -101,15 +145,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 7,
       "hypothesis": "A focusable scene with bounded arrow movement and deliberate cancellation makes the core visit usable without pointer aiming.",
+      "observation": "The baseline canvas could not receive focus or keyboard walking; cancellation also needed to invalidate pending seating.",
       "change": "Label and focus the canvas; add arrow/Enter/Escape controls and reject late asynchronous seating after cancellation.",
       "decision": "keep",
       "score": 51,
       "assessment": "Exercise actual browser keyboard input, cancel movement, and retain menu and rest-journey regressions.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:48:42.578Z",
         "duration": 7346.58,
@@ -117,15 +168,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 8,
       "hypothesis": "Explicit connection state and online/offline handling make solo fallback and recovery understandable and timely.",
+      "observation": "The baseline had no visible connection state and relied only on WebSocket close timing.",
       "change": "Show finding/together/solo states, react to browser connectivity, and ignore callbacks from superseded sockets.",
       "decision": "keep",
       "score": 55,
       "assessment": "Toggle the actual browser context offline and back; verify visible fallback, recovered connection, and reciprocal presence.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:49:52.623Z",
         "duration": 10569.05,
@@ -133,15 +191,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 9,
       "hypothesis": "Serializing and catching audio startup keeps unavailable sound from breaking the quiet visit.",
+      "observation": "The frozen audio-failure case produced an unhandled constructor rejection and no useful feedback.",
       "change": "Guard concurrent toggles, clean up failed contexts, restore the control, and synchronize its accessible label.",
       "decision": "keep",
       "score": 56,
       "assessment": "Inject an unavailable AudioContext, require actionable feedback and zero unhandled page errors, and retain normal settings/rest journeys.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:51:42.125Z",
         "duration": 7663.718,
@@ -149,15 +214,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 10,
       "hypothesis": "Handling renderer creation failure locally offers an actionable visit fallback without hiding unrelated application errors.",
+      "observation": "The frozen WebGL-denial case threw during boot and left nonfunctional controls.",
       "change": "Isolate initialization so renderer failure can return normally; show a readable static fallback with deliberate retry.",
       "decision": "keep",
       "score": 59,
       "assessment": "Deny WebGL in a real browser context, require a visible explanation and retry, and preserve normal rendering and capture.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T14:53:02.602Z",
         "duration": 8921.404999999999,
@@ -165,15 +237,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 11,
       "hypothesis": "A lost graphics context must terminate scene-owned work and offer an intentional restart instead of leaving a frozen interactive shell.",
+      "observation": "The baseline context-loss event had no application-level recovery and left active inputs and connections.",
       "change": "Abort owned event listeners, stop animation and reconnection, close scene audio/socket work, and show the retry screen.",
       "decision": "keep",
       "score": 60,
       "assessment": "Inject context loss into a real initialized browser, reload deliberately, and retain normal graphics and network recovery. A supplementary delayed-timer probe invalidated the initially passing quick result; clear all UI/pending-seat timers and rerun the same probe.",
+      "attempts": 2,
       "browser": {
         "startTime": "2026-11-05T14:58:28.988Z",
         "duration": 17389.273,
@@ -181,15 +260,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 12,
       "hypothesis": "A self-contained initial sky texture preserves a calm, readable scene when the panorama is unavailable.",
+      "observation": "A browser request-abort probe left both windows black despite an otherwise interactive train; the before screenshot is archived.",
       "change": "Use an original canvas-gradient texture immediately, then replace its image on success and retain it on failure.",
       "decision": "keep",
       "score": 60,
       "assessment": "Run the same image-abort probe, inspect before/after screenshots, and verify normal rendering and downloadable capture. The rubric score stays flat; this adds bounded asset-failure robustness.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T15:01:07.843Z",
         "duration": 7608.401,
@@ -197,15 +283,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 13,
       "hypothesis": "An owned single-command launcher removes the missing-backend trap and cleans up both development processes.",
+      "observation": "The original development command started only Vite and required a second manually managed terminal.",
       "change": "Launch both processes with explicit ports and signal cleanup; make the proxy follow REALTIME_PORT.",
       "decision": "keep",
       "score": 61,
       "assessment": "A real process/HTTP/WebSocket test verifies startup, proxying, and teardown. Source hashes now additionally cover scripts/tests/docs for reproducibility; the sealed browser evaluator and rubric are unchanged.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T15:04:07.241Z",
         "duration": 10785.247000000001,
@@ -213,15 +306,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 14,
       "hypothesis": "Serving the build and realtime from one bounded origin removes the deployment mismatch without exposing source files.",
+      "observation": "The original server returned a health string for every HTTP path and could not host the actual built train.",
       "change": "Add an explicit static build server, correct MIME/HEAD/cache semantics, a separate health endpoint, path validation, and loopback default.",
       "decision": "keep",
       "score": 65,
       "assessment": "A fixture-based real HTTP test checks assets, methods, traversal, source exclusion, caching, and health without depending on an existing build. Core browser journeys remain unchanged.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T15:06:46.356Z",
         "duration": 10490.925,
@@ -229,15 +329,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 15,
       "hypothesis": "A same-origin browser guard prevents unrelated sites from silently joining the local room while keeping legitimate proxy and CLI clients working.",
+      "observation": "The original upgrade endpoint accepted any browser Origin, including unrelated websites.",
       "change": "Validate browser origins against the received host or an explicit additional-origin list; retain origin-less protocol clients.",
       "decision": "keep",
       "score": 66,
       "assessment": "Real upgrade requests exercise allowed, unrelated, null, and explicitly configured origins; browser proxy journeys guard against accidental deployment rejection. This does not add authentication.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T15:09:33.578Z",
         "duration": 10342.967999999999,
@@ -245,15 +352,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 16,
       "hypothesis": "A bounded room with native ping/pong liveness can release abandoned participants and shut down predictably.",
+      "observation": "The original room admitted unbounded connections and only removed clients after a transport close event.",
       "change": "Bound capacity, terminate missing-pong sessions, and clean up the owned server on termination signals.",
       "decision": "keep",
       "score": 67,
       "assessment": "Protocol tests keep one healthy participant, drop a non-ponging participant, reject overflow, and admit a replacement; browser recovery and teardown remain intact.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T15:10:56.086Z",
         "duration": 15050.768,
@@ -261,15 +375,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 17,
       "hypothesis": "Coalescing state broadcasts and bounding per-client input prevents burst amplification while retaining acknowledgements and final state.",
+      "observation": "The real pre-change probe received 20 state packets for 20 immediate stop messages.",
       "change": "Coalesce room state within 16 ms, serialize once per broadcast, cap application messages and outgoing buffered bytes.",
       "decision": "keep",
       "score": 67,
       "assessment": "The same bounded-burst probe must pass after previously failing; a separate real socket flood must close with policy code 1008. Ten-client seating and browser presence must remain intact. Score stays flat; bounded traffic is secondary evidence.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-05T15:13:48.207Z",
         "duration": 10193.049,
@@ -277,15 +398,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 18,
       "hypothesis": "Pausing scene work and sound on visibility loss prevents background drawing and unexpected audio restart.",
+      "observation": "A real WebGL/WebAudio probe with an injected visibility event failed because audio remained enabled; the original animation clock also advanced across hidden intervals.",
       "change": "Pause drawing and active scene time while hidden, suspend audio without auto-resume, defer environment updates, and guard asynchronous audio feedback after teardown.",
       "decision": "keep",
       "score": 68,
       "assessment": "The same instrumented browser probe requires zero drawing while hidden, visible drawing recovery, suspended sound, and no automatic restart. This is visibility fault injection, not a real-phone battery measurement.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-06T00:46:30.803Z",
         "duration": 17608.03,
@@ -293,15 +421,22 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     },
     {
       "round": 19,
       "hypothesis": "Explicitly disposing passenger-owned resources releases graphics buffers when real visitors depart without affecting remaining avatars.",
+      "observation": "The pre-change browser probe observed no explicit graphics-buffer release after a remote visitor departed; removal only detached scene nodes.",
       "change": "Collect and dispose unique passenger geometry/materials/textures exactly once, including on graphics teardown.",
       "decision": "keep",
       "score": 68,
       "assessment": "A real browser intercepts native buffer deletion; an ownership test checks deduplicated and idempotent disposal while another passenger remains. This does not claim a measured RAM/VRAM quantity.",
+      "attempts": 1,
       "browser": {
         "startTime": "2026-11-06T00:49:10.931Z",
         "duration": 21722.071,
@@ -309,7 +444,107 @@
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
+      }
+    },
+    {
+      "round": 20,
+      "hypothesis": "A readable, licensed, pinned and reproducibly verified checkout lets another developer run and review the train without local research state.",
+      "observation": "The original project had no public license, CI, clean-check command or single-command public guide, and source was largely minified.",
+      "change": "Pin tested package versions, format application/server code, add license/assets guidance, CI, clean-checkout validation and public evidence documents.",
+      "decision": "keep",
+      "score": 75,
+      "assessment": "The clean temporary checkout must install/build/pass unit and protocol tests; the complete desktop browser suite must pass. Final production, touch and additional-engine checks are reported separately before publication.",
+      "attempts": 1,
+      "browser": {
+        "startTime": "2026-11-06T00:55:02.819Z",
+        "duration": 35558.134999999995,
+        "expected": 20,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
+      }
+    },
+    {
+      "round": 21,
+      "hypothesis": "Passenger cleanup must preserve the globally shared Sprite geometry while disposing owned name materials and textures.",
+      "observation": "A new ownership counterexample failed after 20 rounds: two Three.js Sprites share their geometry, so disposing the departing name tag also disposed the remaining tag geometry.",
+      "change": "Exclude engine-owned Sprite geometry from passenger-owned disposal; retain unique material and texture cleanup.",
+      "decision": "keep",
+      "score": 75,
+      "assessment": "The identical two-Sprite counterexample must pass, along with per-passenger disposal and real browser deallocation/presence. This extra round is a genuine correction, not part of the original 20-count minimum.",
+      "attempts": 1,
+      "browser": {
+        "startTime": "2026-11-06T00:59:28.758Z",
+        "duration": 22037.52,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
+      }
+    },
+    {
+      "round": 22,
+      "hypothesis": "Keeping a fixed-size canvas backing allows the real panorama to replace the fallback without invalidating immutable GPU texture storage.",
+      "observation": "Release screenshot inspection showed the fallback instead of the real sky. Three.js reuses allocated texture storage, while the former CanvasTexture image replacement changed dimensions from 256x128 to 2172x724.",
+      "change": "Allocate a bounded 3:1 canvas once and draw the loaded image into that same backing before updating the texture.",
+      "decision": "keep",
+      "score": 75,
+      "assessment": "Retain the missing-asset path, collect native texture-upload diagnostics, and visually inspect the successful-load screenshot. Record the round-12 normal-load regression and its correction; no score increase is assumed.",
+      "attempts": 1,
+      "browser": {
+        "startTime": "2026-11-06T01:03:57.254Z",
+        "duration": 9208.124,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
       }
     }
-  ]
+  ],
+  "finalChecks": {
+    "final-desktop.json": {
+      "startTime": "2026-11-06T01:05:58.859Z",
+      "duration": 38457.367999999995,
+      "expected": 21,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "final-mobile.json": {
+      "startTime": "2026-11-06T01:05:00.679Z",
+      "duration": 37727.085,
+      "expected": 21,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "production": {
+      "startTime": "2026-11-06T01:06:50.133Z",
+      "duration": 24974.612,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  }
 }

@@ -12,5 +12,6 @@ concepts/
 public/ocean.png
 test-results/
 playwright-report/
+test-results-release/
 .env*
 !.env.example
