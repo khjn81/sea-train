@@ -19,3 +19,18 @@ test('sustained slow frames reduce graphics even when renderer identity is restr
   await page.locator('#stand').click();
   await expect(page.locator('#sit')).toBeEnabled();
 });
+
+test('very slow frames also reduce graphics within a bounded wait', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = WebGL2RenderingContext.prototype.getExtension;
+    WebGL2RenderingContext.prototype.getExtension = function(name) {
+      return name === 'WEBGL_debug_renderer_info' ? null : original.call(this, name);
+    };
+    const nativeFrame = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = callback => nativeFrame(() => setTimeout(() => callback(performance.now()), 1250));
+  });
+  await page.goto('/');
+  const canvas = page.locator('#scene canvas');
+  await expect(canvas).toBeVisible();
+  await expect.poll(() => canvas.evaluate(c => c.width), { timeout: 5000 }).toBeLessThanOrEqual(384);
+});

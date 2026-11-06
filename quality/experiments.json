@@ -547,16 +547,16 @@
     {
       "round": 24,
       "hypothesis": "Measured sustained slow frames can activate the lightweight profile even when renderer identity is unavailable.",
-      "observation": "Sixth Linux run passed desktop22/22 and mobile22/22; WebKit production four-action journey timed out on walking after standing. A restricted-renderer plus140ms-frame probe fails to reduce backing resolution before this change.",
-      "change": "After six visible frames between120ms and1s, activate the existing lightweight profile, remove reflections/shadows, preserve elapsed walking, and retain this choice on resize. Keep normal rendering when frames are responsive.",
+      "observation": "Sixth Linux run passed desktop22/22 and mobile22/22; WebKit production four-action journey timed out on walking after standing. A restricted-renderer plus140ms-frame probe fails to reduce backing resolution before this change. A new1250ms-frame counterexample also failed: the first candidate excluded intervals>=1s, so the slowest devices never adapted.",
+      "change": "After three sustained slow visible frames, activate lightweight graphics, including frames>=1s. Reset observations on visibility changes and preserve the profile on resize.",
       "decision": "keep",
       "score": 75,
       "assessment": "No score inflation: retain75. New supplementary acceptance is red before source changes. Real remote WebKit verdict remains required; no actual-phone FPS claim.",
-      "attempts": 1,
+      "attempts": 2,
       "browser": {
-        "startTime": "2026-11-06T01:56:01.829Z",
-        "duration": 17583.666,
-        "expected": 4,
+        "startTime": "2026-11-06T01:59:34.926Z",
+        "duration": 21013.598,
+        "expected": 5,
         "skipped": 0,
         "unexpected": 0,
         "flaky": 0

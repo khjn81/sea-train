@@ -22,7 +22,10 @@ jobs:
       - run: npm run format:check
       - run: npm run build
       - run: npm test
-      - run: npx playwright install --with-deps chromium webkit
+      - if: matrix.suite != 'production'
+        run: npx playwright install --with-deps chromium
+      - if: matrix.suite == 'production'
+        run: npx playwright install --with-deps chromium webkit
       - if: matrix.suite != 'production'
         run: npx playwright test --config browser.config.js --project=${{ matrix.suite }} --trace=off --reporter=list,json
         env:

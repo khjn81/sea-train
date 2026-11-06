@@ -4,7 +4,7 @@
 
 - 24 distinct hypothesis/change/evaluation rounds were executed. Baseline and harness setup are not counted as improvements.
 - The fixed 100-point rubric moved from 37 to 75. These are implementation-agent judgments supported by execution evidence, not independent human or market ratings.
-- The original frozen desktop suite moved from 5/16 passing to 16/16. Seven supplementary browser probes were added and compared against the relevant pre-change implementation.
+- The original frozen desktop suite moved from 5/16 passing to 16/16. Eight supplementary browser probes were added and compared against the relevant pre-change implementation.
 - Final local development checks: 22/22 desktop and 22/22 mobile-emulation (round 23, before its final cadence correction) cases passed, without retries.
 - Final production checks: 6/6 passed across isolated Chrome, actual emulated touch input, and WebKit contexts.
 - A fresh temporary checkout installed from the lockfile, built, and passed unit/protocol/process checks. CI repeats the public checks in Linux.
@@ -81,3 +81,5 @@ The fourth Linux run improved to 10 passing cases but exposed slow walking under
 The fifth run passed all22 mobile and6 production checks; desktop passed21/22, with the two-person visit reaching the departure assertion at the25-second case limit. The final software profile further reduces backing pixels and drawing cadence (at most384px backing width,0.25 pixel ratio,12Hz). This deliberately trades software-renderer image detail for responsiveness; accelerated graphics retain the original profile. This is the third measured attempt within round23, not a new improvement count.
 
 The sixth run passed all44 development cases and5/6 production cases. WebKit reached the final standing assertion after the35-second case budget. Round24 therefore adds a measured slow-frame fallback instead of relying solely on renderer identity. The new restricted-identity/slow-cadence probe fails before the change and passes afterward. Normal responsive graphics retain the full profile.
+
+A second round24 counterexample exposed that intervals above1second were omitted by its first threshold. The corrected candidate observes three slow visible frames without excluding the slowest frames and resets observations on visibility changes. Both slow-frame probes and the selected original journey/lifecycle checks pass. CI installs only the browser engines used by each job.

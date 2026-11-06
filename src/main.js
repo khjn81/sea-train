@@ -844,6 +844,7 @@ function startTrain() {
   let lastFrame = -Infinity;
   let slowFrames = 0;
   listen(document, "visibilitychange", () => {
+    slowFrames = 0;
     if (document.hidden && audio?.state === "running")
       void audio
         .suspend()
@@ -854,8 +855,8 @@ function startTrain() {
     if (graphicsLost) return;
     const interval = now - lastFrame;
     if (!profile.lightweight && !document.hidden && Number.isFinite(interval)) {
-      slowFrames = interval > 120 && interval < 1000 ? slowFrames + 1 : 0;
-      if (slowFrames >= 6) {
+      slowFrames = interval > 120 ? slowFrames + 1 : 0;
+      if (slowFrames >= 3) {
         adaptiveLight = true;
         profile = renderProfile(
           renderer.getContext(),
