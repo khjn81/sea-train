@@ -74,7 +74,8 @@ function startTrain() {
     devicePixelRatio,
     innerWidth,
   );
-  renderer.shadowMap.enabled = !profile.software;
+  let adaptiveLight = false;
+  renderer.shadowMap.enabled = !profile.lightweight;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setPixelRatio(profile.pixelRatio);
   renderer.setSize(innerWidth, innerHeight);
@@ -127,7 +128,7 @@ function startTrain() {
   });
   const probe = new THREE.CubeCamera(0.1, 140, reflection);
   probe.position.set(0, 2.2, 0);
-  if (!profile.software) {
+  if (!profile.lightweight) {
     probe.update(renderer, scene);
     scene.environment = reflection.texture;
   }
@@ -832,6 +833,7 @@ function startTrain() {
       renderer.getContext(),
       devicePixelRatio,
       innerWidth,
+      adaptiveLight,
     );
     renderer.setPixelRatio(profile.pixelRatio);
     renderer.setSize(innerWidth, innerHeight);
@@ -840,6 +842,7 @@ function startTrain() {
     activeTime = 0;
   const clock = new THREE.Clock();
   let lastFrame = -Infinity;
+  let slowFrames = 0;
   listen(document, "visibilitychange", () => {
     if (document.hidden && audio?.state === "running")
       void audio
@@ -849,20 +852,37 @@ function startTrain() {
   });
   function frame(now = performance.now()) {
     if (graphicsLost) return;
+    const interval = now - lastFrame;
+    if (!profile.lightweight && !document.hidden && Number.isFinite(interval)) {
+      slowFrames = interval > 120 && interval < 1000 ? slowFrames + 1 : 0;
+      if (slowFrames >= 6) {
+        adaptiveLight = true;
+        profile = renderProfile(
+          renderer.getContext(),
+          devicePixelRatio,
+          innerWidth,
+          true,
+        );
+        renderer.shadowMap.enabled = false;
+        scene.environment = null;
+        renderer.setPixelRatio(profile.pixelRatio);
+        renderer.setSize(innerWidth, innerHeight);
+      }
+    }
     if (now - lastFrame < profile.frameInterval) {
       frameHandle = requestAnimationFrame(frame);
       return;
     }
     lastFrame = now;
     // A reduced drawing cadence must not slow walking to a fraction of real time.
-    const dt = Math.min(clock.getDelta(), profile.software ? 0.2 : 0.05);
+    const dt = Math.min(clock.getDelta(), profile.lightweight ? 0.2 : 0.05);
     if (document.hidden) {
       frameHandle = requestAnimationFrame(frame);
       return;
     }
     const time = (activeTime += dt);
     if (environmentDirty) {
-      if (!profile.software) probe.update(renderer, scene);
+      if (!profile.lightweight) probe.update(renderer, scene);
       environmentDirty = false;
     }
     oceanTick(time);
