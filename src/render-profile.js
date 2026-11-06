@@ -11,8 +11,8 @@ export function renderProfile(gl, pixelRatio, width) {
   return {
     software,
     pixelRatio: software
-      ? Math.min(0.33, 512 / width)
+      ? Math.min(0.25, 384 / width)
       : Math.min(pixelRatio, 1.5),
-    frameInterval: software ? 1000 / 15 : 0,
+    frameInterval: software ? 1000 / 12 : 0,
   };
 }

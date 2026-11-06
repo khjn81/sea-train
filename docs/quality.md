@@ -52,7 +52,7 @@ The exact rubric is in [quality/rubric.json](../quality/rubric.json); hypotheses
 | 21 | Exclude engine-owned Sprite geometry from passenger-owned disposal; retain unique material and texture cleanup. | keep | 75/100 |
 | 22 | Allocate a bounded 3:1 canvas once and draw the loaded image into that same backing before updating the texture. | keep | 75/100 |
 
-| 23 | Bound software-renderer resolution, omit dynamic shadows and cube reflections, and limit drawing to 15 Hz. | keep locally; remote verification pending | 75/100 |
+| 23 | Bound software-renderer resolution, omit dynamic shadows and cube reflections, and limit drawing to 12 Hz. | keep locally; remote verification pending | 75/100 |
 
 ## Failures retained in the record
 
@@ -75,3 +75,5 @@ The trace-only hypothesis did not resolve the failure. A local A/B reproduction 
 The third Linux run also timed out with full Chromium. Round 23 addresses the application cost on software renderers directly. Detection remains local; no renderer identity is transmitted or stored. Hardware-accelerated users retain the normal profile. A supplementary probe failed its backing-width bound before the change and passes afterward; all original assertions remain unchanged.
 
 The fourth Linux run improved to 10 passing cases but exposed slow walking under the reduced cadence and exhausted the shared suite budget. The same round was corrected to preserve elapsed walking time and reduce software pixels further. CI now runs the unchanged desktop, mobile, and production projects as separate jobs; case/action timeouts and zero retries remain unchanged. The original 180-second combined local evaluator remains sealed.
+
+The fifth run passed all22 mobile and6 production checks; desktop passed21/22, with the two-person visit reaching the departure assertion at the25-second case limit. The final software profile further reduces backing pixels and drawing cadence (at most384px backing width,0.25 pixel ratio,12Hz). This deliberately trades software-renderer image detail for responsiveness; accelerated graphics retain the original profile. This is the third measured attempt within round23, not a new improvement count.
