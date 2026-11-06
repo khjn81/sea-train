@@ -63,3 +63,7 @@ Supplementary probes explicitly inject storage denial, missing images, unavailab
 ## Public artifact boundaries
 
 The repository contains application source, generated project imagery, tests, and this sanitized summary. Local reference-site snapshots, private research notes, raw traces and local-run state are excluded. Package and asset attribution is in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
+## CI instrumentation experiment
+
+The first Linux run completed installation, formatting, build, and unit checks, then timed out during browser checks. Its traces repeatedly reported GPU readback stalls. A separate CI run disables continuous trace capture while retaining the same browser cases, assertions, retry counts, timeouts, explicit application screenshots, and JSON reports. The outcome is reported separately; this does not change the scored local evaluator or add to the application-improvement count.

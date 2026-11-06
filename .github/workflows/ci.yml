@@ -19,10 +19,10 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npx playwright install --with-deps chromium webkit
-      - run: npx playwright test --reporter=list,json
+      - run: npx playwright test --trace=off --reporter=list,json
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/e2e.json
-      - run: npm run test:release
+      - run: npm run test:release -- --trace=off
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
