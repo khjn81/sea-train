@@ -10,14 +10,23 @@
     "realtime": "node server.js",
     "test": "node --test tests/*.test.mjs",
     "test:e2e": "playwright test",
-    "start": "node server.js"
+    "start": "node server.js",
+    "check:clean": "node scripts/clean-install.mjs",
+    "verify": "npm run build && npm test && npm run test:e2e",
+    "format": "prettier --write src server.js server scripts",
+    "format:check": "prettier --check src server.js server scripts"
   },
   "dependencies": {
-    "three": "^0.180.0",
-    "ws": "^8.18.3"
+    "three": "0.180.0",
+    "ws": "8.22.0"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
-    "vite": "^7.1.7"
-  }
+    "prettier": "3.6.2",
+    "vite": "7.3.7"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "license": "MIT"
 }

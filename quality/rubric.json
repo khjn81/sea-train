@@ -1,0 +1,141 @@
+{
+  "version": "rubric-v1",
+  "dimensions": [
+    "journey",
+    "reliability",
+    "synchronization",
+    "accessibility",
+    "reproducibility"
+  ],
+  "criteria": [
+    {
+      "id": "journey",
+      "dimension": 0,
+      "max": 5,
+      "requirement": "Complete the first visit and all main actions"
+    },
+    {
+      "id": "rest",
+      "dimension": 0,
+      "max": 5,
+      "requirement": "Rest actions and return from window view"
+    },
+    {
+      "id": "keyboard",
+      "dimension": 0,
+      "max": 5,
+      "requirement": "Keyboard controls and cancellation"
+    },
+    {
+      "id": "dialogs",
+      "dimension": 0,
+      "max": 5,
+      "requirement": "Dialog focus isolation and restoration"
+    },
+    {
+      "id": "preferences",
+      "dimension": 1,
+      "max": 5,
+      "requirement": "Denied or corrupt preferences never prevent boot"
+    },
+    {
+      "id": "recovery",
+      "dimension": 1,
+      "max": 5,
+      "requirement": "Disconnect and reconnect without stale ownership"
+    },
+    {
+      "id": "graphics",
+      "dimension": 1,
+      "max": 5,
+      "requirement": "Graceful WebGL failure and context loss"
+    },
+    {
+      "id": "lifecycle",
+      "dimension": 1,
+      "max": 5,
+      "requirement": "Background audio and rendering lifecycle"
+    },
+    {
+      "id": "seats",
+      "dimension": 2,
+      "max": 5,
+      "requirement": "Seat contention and reuse"
+    },
+    {
+      "id": "presence",
+      "dimension": 2,
+      "max": 5,
+      "requirement": "Real/demo distinction and shared actions"
+    },
+    {
+      "id": "greetings",
+      "dimension": 2,
+      "max": 5,
+      "requirement": "Reciprocal greetings and request limits"
+    },
+    {
+      "id": "protocol",
+      "dimension": 2,
+      "max": 5,
+      "requirement": "Malformed messages, bounded clients, cleanup"
+    },
+    {
+      "id": "mobile",
+      "dimension": 3,
+      "max": 5,
+      "requirement": "360px touch targets and landscape layout"
+    },
+    {
+      "id": "motion",
+      "dimension": 3,
+      "max": 5,
+      "requirement": "System and user reduced-motion preferences"
+    },
+    {
+      "id": "privacy",
+      "dimension": 3,
+      "max": 5,
+      "requirement": "No remote fonts, trackers, or required APIs"
+    },
+    {
+      "id": "feedback",
+      "dimension": 3,
+      "max": 5,
+      "requirement": "Loading, connection, and failure feedback"
+    },
+    {
+      "id": "install",
+      "dimension": 4,
+      "max": 5,
+      "requirement": "Reproducible clean lockfile install"
+    },
+    {
+      "id": "production",
+      "dimension": 4,
+      "max": 5,
+      "requirement": "Single-process same-origin production runtime"
+    },
+    {
+      "id": "publication",
+      "dimension": 4,
+      "max": 5,
+      "requirement": "Public readme, license, attribution, CI"
+    },
+    {
+      "id": "e2e",
+      "dimension": 4,
+      "max": 5,
+      "requirement": "Repeatable development and final browser journeys"
+    }
+  ],
+  "scale": {
+    "0": "absent or failing",
+    "1": "implementation clues only",
+    "2": "partial with important known failure",
+    "3": "representative path executed",
+    "4": "edge cases and recovery executed",
+    "5": "bounded repeated reproduction and published evidence"
+  },
+  "limitations": "Implementation-agent evidence-based assessment; not independent human evaluation, actual-phone validation, or market evidence."
+}
