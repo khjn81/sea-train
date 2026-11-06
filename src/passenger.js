@@ -248,7 +248,8 @@ export function disposePassenger(character) {
     materials = new Set(),
     textures = new Set();
   character.traverse((node) => {
-    if (node.geometry) geometries.add(node.geometry);
+    // Sprite geometry is shared globally by Three.js, unlike our owned meshes.
+    if (node.geometry && !node.isSprite) geometries.add(node.geometry);
     for (const material of Array.isArray(node.material)
       ? node.material
       : [node.material]) {

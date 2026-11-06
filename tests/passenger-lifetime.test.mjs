@@ -27,3 +27,21 @@ test('departing passengers dispose each owned resource once without touching oth
   assert.equal(departing.children.length, 0);
   assert.equal(remaining.parent, scene);
 });
+
+test('shared Three.js sprite geometry survives another passenger leaving', () => {
+  const scene = new THREE.Scene();
+  const departing = passenger(scene, 1);
+  const remaining = passenger(scene, 2);
+  const first = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.Texture() }));
+  const second = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.Texture() }));
+  departing.add(first); remaining.add(second);
+  assert.equal(first.geometry, second.geometry, 'Three.js supplies shared Sprite geometry');
+  let sharedDisposals = 0;
+  const count = () => sharedDisposals++;
+  second.geometry.addEventListener('dispose', count);
+  try {
+    disposePassenger(departing);
+    assert.equal(sharedDisposals, 0);
+    assert.equal(second.parent, remaining);
+  } finally { second.geometry.removeEventListener('dispose', count); }
+});
