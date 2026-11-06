@@ -4,7 +4,9 @@
 
 바다 위를 달리는 기차에서 말없이 함께 쉬는 3D 웹 실험입니다. 차를 마시고, 책을 읽고, 창밖을 바라보며 다른 동승객에게 손을 흔들 수 있습니다.
 
-![바다행 객실](docs/train-desktop.png)
+![바다행 객실에서 차를 선택하고 창밖을 바라보는 장면](docs/preview.gif)
+
+[객실 스크린샷](docs/train-desktop.png)
 
 [모바일 화면 보기](docs/train-mobile.png) · 브라우저 에뮬레이션
 
