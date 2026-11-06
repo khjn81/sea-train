@@ -9,7 +9,7 @@ import { readPreference, writePreference, readVolumePercent } from './preference
 import { showGraphicsFailure } from './graphics.js';
 
 function startTrain(){
-const lifetime=new AbortController();let graphicsLost=false,frameHandle=0,guideTimer;
+const lifetime=new AbortController();let graphicsLost=false,frameHandle=0,guideTimer,environmentDirty=false;
 function listen(target,type,callback){target.addEventListener(type,callback,{signal:lifetime.signal});}
 const icons={wave:'♧',seat:'▤',window:'◌',tea:'♨',stand:'♙'};
 const names=['느린 파도','다정한 달빛','작은 노을','고요한 조약돌','포근한 구름','느긋한 바람','따뜻한 별빛','은은한 물결','조용한 소라','맑은 새벽'];
@@ -27,7 +27,7 @@ let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true});}catch{showG
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.4,-3);controls.enablePan=false;controls.enableDamping=true;controls.minDistance=1.8;controls.maxDistance=20;controls.minPolarAngle=.43;controls.maxPolarAngle=1.47;controls.update();
 scene.add(new THREE.HemisphereLight('#ffe8c8','#a29885',2.6));
 const sun=new THREE.DirectionalLight('#ffbb8c',2.1);sun.position.set(-6,7,-5);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-10,right:10,top:14,bottom:-14,near:.5,far:35});sun.shadow.bias=-.001;scene.add(sun);
-const panorama=buildAtmosphere(scene,()=>{if(!graphicsLost)probe.update(renderer,scene);});const oceanTick=buildOcean(scene,panorama);const {seats,targets}=buildCarriage(scene);
+const panorama=buildAtmosphere(scene,()=>{environmentDirty=true;});const oceanTick=buildOcean(scene,panorama);const {seats,targets}=buildCarriage(scene);
 for(const z of [-5,4]){const lamp=new THREE.PointLight('#ffe3b2',9,12,2);lamp.position.set(0,3.9,z);scene.add(lamp);}
 const reflection=new THREE.WebGLCubeRenderTarget(64,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});const probe=new THREE.CubeCamera(.1,140,reflection);probe.position.set(0,2.2,0);probe.update(renderer,scene);scene.environment=reflection.texture;
 const floorHit=new THREE.Mesh(new THREE.BoxGeometry(1.9,.03,18),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));floorHit.position.y=.12;scene.add(floorHit);
@@ -43,7 +43,7 @@ let journeyEpoch=0;
 const actionNames={idle:'가만히 쉬는 중',tea:'따뜻한 차를 마시는 중',read:'책을 읽는 중',stretch:'기지개를 켜는 중'};
 function send(message){if(connected&&socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify(message));}
 function aim(position,target){controls.enableDamping=false;controls.update();controls.enabled=false;cameraGoal={position,target};}
-let toastTimer;function toast(text){$('.toast').textContent=text;$('.toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('.toast').classList.remove('show'),2800);}
+let toastTimer;function toast(text){if(graphicsLost)return;$('.toast').textContent=text;$('.toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('.toast').classList.remove('show'),2800);}
 function ui(){
  $('#connection-state').textContent=connected?'함께 쉬는 중':networkPhase==='connecting'?'동승객을 찾는 중':'혼자 둘러보는 중';
  $('#count').textContent=connected?users.length:'1';$('#people').title=connected?`실제 접속 ${users.length}명`:'연결 끊김 · 혼자 둘러보는 중';
@@ -114,11 +114,11 @@ async function toggleSound(){
   const air=audio.createBufferSource(),filter=audio.createBiquadFilter();airGain=audio.createGain();air.buffer=b;air.loop=true;filter.type='lowpass';filter.frequency.value=350;airGain.gain.value=.06;air.connect(filter).connect(airGain).connect(master);air.start();
   const wheel=audio.createOscillator();wheel.type='sine';wheel.frequency.value=65;railGain=audio.createGain();railGain.gain.value=.02;wheel.connect(railGain).connect(master);wheel.start();await audio.resume();
  }else if(audio.state==='running')await audio.suspend();else await audio.resume();
- const on=audio.state==='running';$('#sound').setAttribute('aria-pressed',String(on));$('#sound').textContent=on?'♪ 켜짐':'♪ 소리';toast(on?'차창과 레일의 소리가 들려요.':'소리를 껐어요.');
+ const on=audio.state==='running';updateSoundButton(on);toast(on?'차창과 레일의 소리가 들려요.':'소리를 껐어요.');
 }
 let audioChanging=false;
-function updateSoundButton(on){$('#sound').setAttribute('aria-pressed',String(on));$('#sound').setAttribute('aria-label',on?'환경음 끄기':'환경음 켜기');$('#sound').textContent=on?'♪ 켜짐':'♪ 소리';}
-$('#sound').onclick=async()=>{if(audioChanging)return;audioChanging=true;$('#sound').disabled=true;try{await toggleSound();updateSoundButton(audio?.state==='running');}catch{try{await audio?.close();}catch{}audio=null;master=null;railGain=null;airGain=null;updateSoundButton(false);toast('지금은 소리를 켤 수 없어요. 소리 없이도 쉬어갈 수 있어요.');}finally{audioChanging=false;$('#sound').disabled=false;}};
+function updateSoundButton(on){const button=$('#sound');if(!button)return;button.setAttribute('aria-pressed',String(on));button.setAttribute('aria-label',on?'환경음 끄기':'환경음 켜기');button.textContent=on?'♪ 켜짐':'♪ 소리';}
+$('#sound').onclick=async()=>{if(audioChanging)return;audioChanging=true;$('#sound').disabled=true;try{await toggleSound();updateSoundButton(audio?.state==='running');}catch{try{await audio?.close();}catch{}audio=null;master=null;railGain=null;airGain=null;updateSoundButton(false);toast('지금은 소리를 켤 수 없어요. 소리 없이도 쉬어갈 수 있어요.');}finally{audioChanging=false;const button=$('#sound');if(button)button.disabled=false;}};
 const modal=$('#modal'),content=$('#modal-content');let focusBeforeModal,modalIsolation=[];
 function openModal(title,html){if(modal.hidden){focusBeforeModal=document.activeElement;modalIsolation=[...$('#app').children].filter(el=>el!==modal).map(el=>[el,el.inert]);}$('#modal-title').textContent=title;content.innerHTML=html;for(const [el] of modalIsolation)el.inert=true;modal.hidden=false;modal.querySelector('.close').focus();}
 function closeModal(){if(modal.hidden)return;modal.hidden=true;for(const [el,wasInert] of modalIsolation)el.inert=wasInert;modalIsolation=[];if(focusBeforeModal?.isConnected&&!focusBeforeModal.disabled)focusBeforeModal.focus();}
@@ -141,10 +141,11 @@ $('#capture').onclick=()=>{
  openModal('오늘의 차창',`<img class="postcard" alt="방금 기차에서 담은 장면" src="${url}"><a class="download" href="${url}" download="바다행-차창.png">이미지 저장</a><p>지금 이 순간을 한 장에 담았어요.</p>`);
 };
 listen(window,'resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-let lastMove=0;const clock=new THREE.Clock();
+let lastMove=0,activeTime=0;const clock=new THREE.Clock();
+listen(document,'visibilitychange',()=>{if(document.hidden&&audio?.state==='running')void audio.suspend().then(()=>updateSoundButton(audio?.state==='running')).catch(()=>updateSoundButton(false));});
 function frame(){
  if(graphicsLost)return;
- const dt=Math.min(clock.getDelta(),.05),time=clock.elapsedTime;oceanTick(time);
+ const dt=Math.min(clock.getDelta(),.05);if(document.hidden){frameHandle=requestAnimationFrame(frame);return;}const time=activeTime+=dt;if(environmentDirty){probe.update(renderer,scene);environmentDirty=false;}oceanTick(time);
  const railPhase=(time*1.3)%1;
  if(audio?.state==='running')railGain.gain.setTargetAtTime(.012+.045*Math.exp(-railPhase*24)+.022*Math.exp(-Math.pow((railPhase-.18)*28,2)),audio.currentTime,.02);
  let moving=0;
