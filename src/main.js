@@ -19,6 +19,7 @@ import {
   readVolumePercent,
 } from "./preferences.js";
 import { showGraphicsFailure } from "./graphics.js";
+import { renderProfile } from "./render-profile.js";
 
 function startTrain() {
   const lifetime = new AbortController();
@@ -68,9 +69,14 @@ function startTrain() {
     showGraphicsFailure();
     return;
   }
-  renderer.shadowMap.enabled = true;
+  let profile = renderProfile(
+    renderer.getContext(),
+    devicePixelRatio,
+    innerWidth,
+  );
+  renderer.shadowMap.enabled = !profile.software;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.setPixelRatio(profile.pixelRatio);
   renderer.setSize(innerWidth, innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -121,8 +127,10 @@ function startTrain() {
   });
   const probe = new THREE.CubeCamera(0.1, 140, reflection);
   probe.position.set(0, 2.2, 0);
-  probe.update(renderer, scene);
-  scene.environment = reflection.texture;
+  if (!profile.software) {
+    probe.update(renderer, scene);
+    scene.environment = reflection.texture;
+  }
   const floorHit = new THREE.Mesh(
     new THREE.BoxGeometry(1.9, 0.03, 18),
     new THREE.MeshBasicMaterial({
@@ -820,11 +828,18 @@ function startTrain() {
   listen(window, "resize", () => {
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
+    profile = renderProfile(
+      renderer.getContext(),
+      devicePixelRatio,
+      innerWidth,
+    );
+    renderer.setPixelRatio(profile.pixelRatio);
     renderer.setSize(innerWidth, innerHeight);
   });
   let lastMove = 0,
     activeTime = 0;
   const clock = new THREE.Clock();
+  let lastFrame = -Infinity;
   listen(document, "visibilitychange", () => {
     if (document.hidden && audio?.state === "running")
       void audio
@@ -832,8 +847,13 @@ function startTrain() {
         .then(() => updateSoundButton(audio?.state === "running"))
         .catch(() => updateSoundButton(false));
   });
-  function frame() {
+  function frame(now = performance.now()) {
     if (graphicsLost) return;
+    if (now - lastFrame < profile.frameInterval) {
+      frameHandle = requestAnimationFrame(frame);
+      return;
+    }
+    lastFrame = now;
     const dt = Math.min(clock.getDelta(), 0.05);
     if (document.hidden) {
       frameHandle = requestAnimationFrame(frame);
@@ -841,7 +861,7 @@ function startTrain() {
     }
     const time = (activeTime += dt);
     if (environmentDirty) {
-      probe.update(renderer, scene);
+      if (!profile.software) probe.update(renderer, scene);
       environmentDirty = false;
     }
     oceanTick(time);

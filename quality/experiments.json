@@ -11,7 +11,8 @@
   "notes": [
     "Round 11 quick-check acceptance was invalidated by a delayed timer probe; corrected in the same round.",
     "Round 21 preserved shared Sprite geometry.",
-    "Round 22 repaired the normal panorama upload regression introduced by the fallback implementation."
+    "Round 22 repaired the normal panorama upload regression introduced by the fallback implementation.",
+    "Round 23 bounds software graphics after three Linux browser-timeout runs; CI outcome remains separately reported."
   ],
   "rounds": [
     {
@@ -509,6 +510,29 @@
       "browser": {
         "startTime": "2026-11-06T01:03:57.254Z",
         "duration": 9208.124,
+        "expected": 4,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "validity": {
+        "unit": 0,
+        "build": 0,
+        "e2e": 0
+      }
+    },
+    {
+      "round": 23,
+      "hypothesis": "A bounded software-rendering profile preserves interaction when accelerated graphics are unavailable.",
+      "observation": "Three Linux runs time out on UI actions; full Chromium selection and disabled traces did not resolve Linux software-rendering stalls. A software-identity probe fails the 640px backing-size bound before the change.",
+      "change": "Locally detect software renderers, cap backing width and pixel ratio, omit dynamic shadows/cube reflection, and limit drawing to 20Hz; preserve scene content and every original acceptance assertion.",
+      "decision": "keep",
+      "score": 75,
+      "assessment": "Score stays 75 until real remote verification. Full original evaluator remains sealed. New supplementary software probe is red before this change; no claim of physical-device performance.",
+      "attempts": 1,
+      "browser": {
+        "startTime": "2026-11-06T01:35:45.326Z",
+        "duration": 12497.967,
         "expected": 4,
         "skipped": 0,
         "unexpected": 0,
